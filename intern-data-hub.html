@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Field Reports — Survey Card</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Space+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+      :root {
+        --paper: #eaefe7;
+        --card: #fbfcf9;
+        --ink: #1c2e27;
+        --ink-soft: #55665d;
+        --line: #c7d2c4;
+        --clay: #c1543a;
+        --teal: #2f6e62;
+        --gold: #b4923b;
+        --pending: #b4923b;
+        --verified: #2f6e62;
+        --rejected: #c1543a;
+        --radius: 2px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background-color: var(--paper);
+        background-image:
+          linear-gradient(var(--line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--line) 1px, transparent 1px);
+        background-size: 26px 26px;
+        background-position: -1px -1px;
+        color: var(--ink);
+        font-family: "Source Serif 4", serif;
+        min-height: 100vh;
+      }
+      ::selection {
+        background: var(--gold);
+        color: #1c2e27;
+      }
+
+      .wrap {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 18px 90px;
+      }
+
+      /* ---------- Header strip ---------- */
+      .letterhead {
+        background: var(--card);
+        border: 1px solid var(--ink);
+        padding: 20px 24px;
+        margin-bottom: 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+        position: relative;
+      }
+      .letterhead::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 6px;
+        background: var(--clay);
+      }
+      .title-block {
+        padding-left: 10px;
+      }
+      .kicker {
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+      h1 {
+        font-family: "Archivo Black", sans-serif;
+        font-weight: 400;
+        text-transform: uppercase;
+        font-size: clamp(24px, 4.4vw, 34px);
+        margin: 4px 0 0;
+        letter-spacing: 0.5px;
+        line-height: 1;
+      }
+      .stat-strip {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .stat {
+        font-family: "Space Mono", monospace;
+        text-align: center;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        padding: 6px 12px;
+        min-width: 64px;
+      }
+      .stat b {
+        display: block;
+        font-size: 18px;
+      }
+      .stat span {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--ink-soft);
+      }
+      .stat.on-pending b {
+        color: var(--pending);
+      }
+      .stat.on-verified b {
+        color: var(--verified);
+      }
+      .stat.on-rejected b {
+        color: var(--rejected);
+      }
+
+      .conn-line {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        color: var(--ink-soft);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 20px;
+      }
+      .conn-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--rejected);
+      }
+      .conn-dot.live {
+        background: var(--verified);
+      }
+
+      /* ---------- Config ---------- */
+      details.config {
+        background: var(--card);
+        border: 1px solid var(--line);
+        margin-bottom: 24px;
+        padding: 14px 18px;
+      }
+      details.config summary {
+        cursor: pointer;
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--teal);
+      }
+      details.config[open] summary {
+        margin-bottom: 14px;
+      }
+      .config-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 600px) {
+        .config-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      label {
+        display: block;
+        font-family: "Space Mono", monospace;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--ink-soft);
+        margin-bottom: 5px;
+      }
+      input[type="text"],
+      input[type="password"],
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--ink);
+        background: #fff;
+        color: var(--ink);
+        padding: 9px 10px;
+        font-family: "Space Mono", monospace;
+        font-size: 13px;
+        border-radius: var(--radius);
+        outline: none;
+      }
+      input:focus,
+      select:focus,
+      textarea:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 2px rgba(47, 110, 98, 0.15);
+      }
+
+      button {
+        font-family: "Space Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        background: var(--ink);
+        color: var(--paper);
+        border: 1px solid var(--ink);
+        padding: 10px 16px;
+        cursor: pointer;
+        border-radius: var(--radius);
+        font-weight: 700;
+      }
+      button:hover {
+        background: var(--teal);
+        border-color: var(--teal);
+      }
+      button.ghost {
+        background: transparent;
+        color: var(--ink);
+      }
+      button.ghost:hover {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      button.danger {
+        background: var(--card);
+        color: var(--clay);
+        border-color: var(--clay);
+      }
+      button.danger:hover {
+        background: var(--clay);
+        color: #fff;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      textarea:focus-visible {
+        outline: 2px solid var(--teal);
+        outline-offset: 2px;
+      }
+
+      /* ---------- New entry card ---------- */
+      .card {
+        background: var(--card);
+        border: 1px solid var(--ink);
+        padding: 22px;
+        margin-bottom: 14px;
+        position: relative;
+      }
+      .card h2 {
+        font-family: "Archivo Black", sans-serif;
+        font-weight: 400;
+        text-transform: uppercase;
+        font-size: 16px;
+        letter-spacing: 1px;
+        margin: 0 0 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px dashed var(--line);
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 14px;
+      }
+      .form-grid .full {
+        grid-column: 1/-1;
+      }
+      @media (max-width: 600px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .tally {
+        display: flex;
+        gap: 5px;
+        margin-top: 8px;
+      }
+      .tsq {
+        width: 28px;
+        height: 28px;
+        border: 1px solid var(--ink);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        background: #fff;
+        color: var(--ink-soft);
+      }
+      .tsq.filled {
+        background: var(--gold);
+        color: #1c2e27;
+        font-weight: 700;
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: var(--gold);
+        height: 22px;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+
+      .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      /* ---------- Filter tabs ---------- */
+      .tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 14px;
+        border-bottom: 1px solid var(--ink);
+      }
+      .tabs button {
+        background: transparent;
+        color: var(--ink-soft);
+        border: 1px solid var(--ink);
+        border-bottom: none;
+        border-radius: 0;
+        margin-right: 4px;
+        padding: 8px 14px;
+      }
+      .tabs button.active {
+        background: var(--ink);
+        color: var(--paper);
+      }
+
+      .empty {
+        border: 1px dashed var(--line);
+        padding: 34px 18px;
+        text-align: center;
+        color: var(--ink-soft);
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        background: var(--card);
+      }
+
+      /* ---------- Entry (index card w/ folder tab) ---------- */
+      .entry {
+        background: var(--card);
+        border: 1px solid var(--ink);
+        margin-bottom: 12px;
+        position: relative;
+        padding: 16px 18px 16px 26px;
+      }
+      .entry::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 8px;
+      }
+      .entry.Pending::before {
+        background: var(--pending);
+      }
+      .entry.Verified::before {
+        background: var(--verified);
+      }
+      .entry.Rejected::before {
+        background: var(--rejected);
+      }
+
+      .entry-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .loc {
+        font-family: "Archivo Black", sans-serif;
+        font-weight: 400;
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .meta {
+        font-family: "Space Mono", monospace;
+        font-size: 10.5px;
+        color: var(--ink-soft);
+        margin-top: 3px;
+      }
+      .notes {
+        margin-top: 8px;
+        font-size: 13.5px;
+        color: #37453d;
+        line-height: 1.55;
+      }
+
+      .tag {
+        font-family: "Space Mono", monospace;
+        font-size: 9.5px;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        padding: 4px 9px;
+        border: 1px solid;
+        align-self: flex-start;
+      }
+      .tag.Pending {
+        color: var(--pending);
+        border-color: var(--pending);
+      }
+      .tag.Verified {
+        color: var(--verified);
+        border-color: var(--verified);
+      }
+      .tag.Rejected {
+        color: var(--rejected);
+        border-color: var(--rejected);
+      }
+
+      .tallymark {
+        display: flex;
+        gap: 3px;
+        margin-top: 9px;
+      }
+      .tallymark i {
+        width: 5px;
+        height: 14px;
+        background: var(--line);
+        display: block;
+      }
+      .tallymark i.on {
+        background: var(--gold);
+      }
+
+      .entry-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .entry-actions button {
+        padding: 6px 12px;
+        font-size: 10px;
+      }
+
+      .edit-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 12px;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px dashed var(--line);
+      }
+      @media (max-width: 600px) {
+        .edit-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--ink);
+        color: var(--paper);
+        border: 1px solid var(--ink);
+        padding: 10px 18px;
+        font-family: "Space Mono", monospace;
+        font-size: 12px;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 0.25s,
+          transform 0.25s;
+        z-index: 50;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-6px);
+      }
+      .toast.error {
+        background: var(--clay);
+        border-color: var(--clay);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="letterhead">
+        <div class="title-block">
+          <div class="kicker">Intern Data Hub · field_reports</div>
+          <h1>Survey Card</h1>
+        </div>
+        <div class="stat-strip">
+          <div class="stat"><b id="statAll">0</b><span>Total</span></div>
+          <div class="stat on-pending">
+            <b id="statPending">0</b><span>Pending</span>
+          </div>
+          <div class="stat on-verified">
+            <b id="statVerified">0</b><span>Verified</span>
+          </div>
+          <div class="stat on-rejected">
+            <b id="statRejected">0</b><span>Rejected</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="conn-line">
+        <span class="conn-dot" id="connDot"></span
+        ><span id="connText">Not connected</span>
+      </div>
+
+      <div class="card">
+        <h2>New entry</h2>
+        <div class="form-grid">
+          <div>
+            <label for="f_location">Location name</label>
+            <input
+              type="text"
+              id="f_location"
+              placeholder="e.g. Kissy Market, Freetown"
+            />
+          </div>
+          <div>
+            <label for="f_status">Status</label>
+            <select id="f_status">
+              <option>Pending</option>
+              <option>Verified</option>
+              <option>Rejected</option>
+            </select>
+          </div>
+          <div class="full">
+            <label for="f_priority_range"
+              >Priority score — <span id="f_priority_readout">3</span> /
+              5</label
+            >
+            <input
+              type="range"
+              id="f_priority_range"
+              min="1"
+              max="5"
+              step="1"
+            />
+            <div class="tally" id="f_priority_tally"></div>
+          </div>
+          <div class="full">
+            <label for="f_notes">Notes (optional)</label>
+            <textarea
+              id="f_notes"
+              rows="2"
+              placeholder="Field observations…"
+            ></textarea>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="ghost" id="clearFormBtn" type="button">Clear</button>
+          <button id="submitBtn" type="button">Save entry</button>
+        </div>
+      </div>
+
+      <div class="tabs" id="filterBar">
+        <button data-filter="All" class="active">All</button>
+        <button data-filter="Pending">Pending</button>
+        <button data-filter="Verified">Verified</button>
+        <button data-filter="Rejected">Rejected</button>
+      </div>
+
+      <div id="list"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      const SUPABASE_URL = "https://yeotghfbxwovhsdayrbh.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "sb_publishable_1fulir_M2jP095MOLd8bGg_lZNSqjiD";
+
+      let sb = null;
+      let reports = [];
+      let currentFilter = "All";
+      let newPriority = 3;
+      let editingId = null;
+      let editPriorities = {};
+
+      const $ = (id) => document.getElementById(id);
+
+      function drawTally(el, value) {
+        el.innerHTML = "";
+        for (let i = 1; i <= 5; i++) {
+          const t = document.createElement("div");
+          t.className = "tsq" + (i <= value ? " filled" : "");
+          t.textContent = i;
+          el.appendChild(t);
+        }
+      }
+      function buildTally() {
+        newPriority = Number($("f_priority_range").value);
+        $("f_priority_readout").textContent = newPriority;
+        drawTally($("f_priority_tally"), newPriority);
+      }
+      $("f_priority_range").addEventListener("input", buildTally);
+      buildTally();
+
+      function toast(msg, isError = false) {
+        const t = $("toast");
+        t.textContent = msg;
+        t.className = "toast show" + (isError ? " error" : "");
+        setTimeout(() => t.classList.remove("show"), 2600);
+      }
+
+      function connect() {
+        if (
+          !SUPABASE_URL ||
+          !SUPABASE_ANON_KEY ||
+          SUPABASE_URL === "YOUR_SUPABASE_PROJECT_URL"
+        ) {
+          $("connText").textContent =
+            "Not configured — edit SUPABASE_URL / SUPABASE_ANON_KEY in the code";
+          return;
+        }
+        try {
+          sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          $("connDot").classList.add("live");
+          $("connText").textContent = "Connected";
+          fetchReports();
+        } catch (e) {
+          $("connText").textContent = "Connection failed: " + e.message;
+        }
+      }
+      connect();
+
+      async function fetchReports() {
+        if (!sb) return;
+        const { data, error } = await sb
+          .from("field_reports")
+          .select("*")
+          .order("created_at", { ascending: false });
+        if (error) {
+          toast("Fetch failed: " + error.message, true);
+          return;
+        }
+        reports = data;
+        render();
+      }
+
+      $("submitBtn").addEventListener("click", async () => {
+        if (!sb) {
+          toast("Connect to Supabase first", true);
+          return;
+        }
+        const location_name = $("f_location").value.trim();
+        const status = $("f_status").value;
+        const notes = $("f_notes").value.trim();
+        if (!location_name) {
+          toast("Location name is required", true);
+          return;
+        }
+
+        const { error } = await sb.from("field_reports").insert({
+          location_name,
+          status,
+          priority_score: newPriority,
+          notes: notes || null,
+        });
+        if (error) {
+          toast("Insert failed: " + error.message, true);
+          return;
+        }
+        toast("Entry saved");
+        $("f_location").value = "";
+        $("f_notes").value = "";
+        $("f_status").value = "Pending";
+        $("f_priority_range").value = 3;
+        buildTally();
+        fetchReports();
+      });
+
+      $("clearFormBtn").addEventListener("click", () => {
+        $("f_location").value = "";
+        $("f_notes").value = "";
+        $("f_status").value = "Pending";
+        $("f_priority_range").value = 3;
+        buildTally();
+      });
+
+      $("filterBar").addEventListener("click", (e) => {
+        if (e.target.tagName !== "BUTTON") return;
+        currentFilter = e.target.dataset.filter;
+        [...$("filterBar").children].forEach((b) =>
+          b.classList.toggle("active", b === e.target),
+        );
+        render();
+      });
+
+      function updateStats() {
+        $("statAll").textContent = reports.length;
+        $("statPending").textContent = reports.filter(
+          (r) => r.status === "Pending",
+        ).length;
+        $("statVerified").textContent = reports.filter(
+          (r) => r.status === "Verified",
+        ).length;
+        $("statRejected").textContent = reports.filter(
+          (r) => r.status === "Rejected",
+        ).length;
+      }
+
+      function render() {
+        updateStats();
+        const list = $("list");
+        const filtered =
+          currentFilter === "All"
+            ? reports
+            : reports.filter((r) => r.status === currentFilter);
+
+        if (!sb) {
+          list.innerHTML =
+            '<div class="empty">Connect your Supabase project above to load the survey log.</div>';
+          return;
+        }
+        if (filtered.length === 0) {
+          list.innerHTML =
+            '<div class="empty">No entries yet in this view. File the first one above.</div>';
+          return;
+        }
+
+        list.innerHTML = filtered.map((r) => rowHTML(r)).join("");
+
+        filtered.forEach((r) => {
+          $("edit-toggle-" + r.id)?.addEventListener("click", () => {
+            editingId = editingId === r.id ? null : r.id;
+            render();
+          });
+          $("delete-" + r.id)?.addEventListener("click", () =>
+            deleteReport(r.id, r.location_name),
+          );
+          if (editingId === r.id) {
+            $("save-" + r.id)?.addEventListener("click", () => saveEdit(r.id));
+            $("cancel-" + r.id)?.addEventListener("click", () => {
+              editingId = null;
+              render();
+            });
+            buildEditTally(r.id, r.priority_score);
+          }
+        });
+      }
+
+      function rowHTML(r) {
+        const created = new Date(r.created_at);
+        const dateStr =
+          created.toLocaleDateString(undefined, {
+            month: "short",
+            day: "2-digit",
+            year: "numeric",
+          }) +
+          " · " +
+          created.toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        const marks = Array.from(
+          { length: 5 },
+          (_, i) => `<i class="${i < r.priority_score ? "on" : ""}"></i>`,
+        ).join("");
+        const editing = editingId === r.id;
+
+        return `
+    <div class="entry ${r.status}">
+      <div class="entry-top">
+        <div>
+          <div class="loc">${escapeHTML(r.location_name)}</div>
+          <div class="meta">${dateStr} &nbsp;·&nbsp; ID ${r.id.slice(0, 8)}</div>
+          ${r.notes ? `<div class="notes">${escapeHTML(r.notes)}</div>` : ""}
+          <div class="tallymark" title="Priority ${r.priority_score}/5">${marks}</div>
+        </div>
+        <span class="tag ${r.status}">${r.status}</span>
+      </div>
+      <div class="entry-actions">
+        <button class="ghost" id="edit-toggle-${r.id}">${editing ? "Close" : "Edit"}</button>
+        <button class="danger" id="delete-${r.id}">Delete</button>
+      </div>
+      ${editing ? editFormHTML(r) : ""}
+    </div>
+  `;
+      }
+
+      function editFormHTML(r) {
+        return `
+    <div class="edit-grid">
+      <div>
+        <label>Location name</label>
+        <input type="text" id="edit-loc-${r.id}" value="${escapeAttr(r.location_name)}">
+      </div>
+      <div>
+        <label>Status</label>
+        <select id="edit-status-${r.id}">
+          ${["Pending", "Verified", "Rejected"].map((s) => `<option ${s === r.status ? "selected" : ""}>${s}</option>`).join("")}
+        </select>
+      </div>
+      <div class="full">
+        <label for="edit-range-${r.id}">Priority score — <span id="edit-readout-${r.id}">${r.priority_score}</span> / 5</label>
+        <input type="range" id="edit-range-${r.id}" min="1" max="5" step="1" value="${r.priority_score}">
+        <div class="tally" id="edit-dial-${r.id}"></div>
+      </div>
+      <div class="full">
+        <label>Notes</label>
+        <textarea id="edit-notes-${r.id}" rows="2">${escapeHTML(r.notes || "")}</textarea>
+      </div>
+      <div class="full" style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="ghost" id="cancel-${r.id}" type="button">Cancel</button>
+        <button id="save-${r.id}" type="button">Save changes</button>
+      </div>
+    </div>
+  `;
+      }
+
+      function buildEditTally(id, current) {
+        if (editPriorities[id] === undefined) editPriorities[id] = current;
+        const el = $("edit-dial-" + id);
+        const range = $("edit-range-" + id);
+        const readout = $("edit-readout-" + id);
+        if (!el || !range) return;
+        drawTally(el, editPriorities[id]);
+        range.addEventListener("input", () => {
+          editPriorities[id] = Number(range.value);
+          readout.textContent = editPriorities[id];
+          drawTally(el, editPriorities[id]);
+        });
+      }
+
+      async function saveEdit(id) {
+        const location_name = $("edit-loc-" + id).value.trim();
+        const status = $("edit-status-" + id).value;
+        const notes = $("edit-notes-" + id).value.trim();
+        const priority_score = editPriorities[id];
+        if (!location_name) {
+          toast("Location name is required", true);
+          return;
+        }
+
+        const { error } = await sb
+          .from("field_reports")
+          .update({
+            location_name,
+            status,
+            priority_score,
+            notes: notes || null,
+          })
+          .eq("id", id);
+
+        if (error) {
+          toast("Update failed: " + error.message, true);
+          return;
+        }
+        toast("Entry updated");
+        editingId = null;
+        delete editPriorities[id];
+        fetchReports();
+      }
+
+      async function deleteReport(id, name) {
+        if (!confirm(`Delete the entry for "${name}"? This can't be undone.`))
+          return;
+        const { error } = await sb.from("field_reports").delete().eq("id", id);
+        if (error) {
+          toast("Delete failed: " + error.message, true);
+          return;
+        }
+        toast("Entry deleted");
+        fetchReports();
+      }
+
+      function escapeHTML(str) {
+        return String(str).replace(
+          /[&<>"']/g,
+          (s) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[s],
+        );
+      }
+      function escapeAttr(str) {
+        return escapeHTML(str);
+      }
+
+      render();
+    </script>
+  </body>
+</html>
