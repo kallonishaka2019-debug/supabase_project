@@ -1,0 +1,30 @@
+# Dependencies and local tooling
+node_modules/
+server/node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+
+# Local database state and runtime output
+server/*.sqlite
+server/*.sqlite-shm
+server/*.sqlite-wal
+*.log
+npm-debug.log*
+
+# Deployment and editor metadata
+.vercel/
+.railway/
+.DS_Store
+.vscode/
+customJersey/*.png
+./images/

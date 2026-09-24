@@ -1,0 +1,25 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "options": {
+      "nixpacksPlan": {
+        "phases": {
+          "setup": {
+            "nixDeps": ["nodejs"],
+            "cmds": ["npm install"]
+          },
+          "build": {
+            "cmds": []
+          },
+          "start": {
+            "cmds": ["node server/server.js"]
+          }
+        }
+      }
+    }
+  },
+  "server": {
+    "port": 3000,
+    "dist": "."
+  }
+}
