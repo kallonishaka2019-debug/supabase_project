@@ -242,7 +242,7 @@ function detailsStepHtml() {
         <select id="fDeliveryTier">${deliveryTierHtml}</select>
       </div>
       <div class="field" id="addressField" style="${isDelivery ? '' : 'display:none;'}">
-        <label for="fAddress">Delivery address</label>
+        <label for="fAddress">Delivery address *</label>
         <textarea id="fAddress" placeholder="Street, area, landmark">${window.customer?.address || ''}</textarea>
       </div>
       <div class="field">

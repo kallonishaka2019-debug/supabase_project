@@ -312,6 +312,9 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
   }
   const paymentDueAmount = Math.ceil(total * paymentRate);
   const finalDeliveryAddress = deliveryAddress || address;
+  if (selectedDelivery !== "pickup" && !String(finalDeliveryAddress || "").trim()) {
+    return response.status(400).json({ error: "Delivery address is required" });
+  }
   const customerName = String(request.body.customerName || request.user?.name || "").trim();
   const customerPhone = String(request.body.customerPhone || request.user?.phone || "").trim();
 
