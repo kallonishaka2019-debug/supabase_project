@@ -93,7 +93,7 @@ function renderGrid() {
           <div class="price-row">
             <span class="price">${CURRENCY} ${p.price}${p.sale ? `<span class="strike">${CURRENCY} ${p.sale}</span>` : ''}</span>
           </div>
-          <button class="add-btn ${isAvailable ? '' : 'request-btn'}" data-add="${p.id}" data-request="${isAvailable ? '' : p.id}">${isAvailable ? 'Add to cart' : 'Order this kit'}</button>
+          <button class="add-btn ${isAvailable ? '' : 'request-btn'}" data-add="${p.id}">${isAvailable ? 'Add to cart' : 'Order this kit'}</button>
         </div>
       </div>`;
   }).join('');
@@ -108,16 +108,12 @@ function renderGrid() {
   grid.querySelectorAll('[data-add]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.add);
-      if (btn.dataset.request) {
-        window.open(buildAvailabilityRequestLink(id), '_blank', 'noopener');
-        return;
-      }
       const size = selectedSizeGlobal[id] || 'M';
       addToCart(id, size);
       btn.textContent = 'Added ✓';
       btn.classList.add('added');
       setTimeout(() => {
-        btn.textContent = 'Add to cart';
+        btn.textContent = btn.classList.contains('request-btn') ? 'Order this kit' : 'Add to cart';
         btn.classList.remove('added');
       }, 1100);
     });
@@ -166,13 +162,15 @@ function cartStepHtml() {
   const rows = cart.map(item => {
     const p = getCartProduct(item);
     const label = item.custom ? `${p.club} • Custom` : p.club;
+    const isAvailable = isProductAvailable(p);
     const itemPrice = p ? p.price * item.qty : 0;
     return `
-      <div class="line-item">
+      <div class="line-item ${isAvailable ? '' : 'line-item-unavailable'}">
         <div class="li-thumb">${jerseyVisual(p)}</div>
         <div class="li-info">
           <div class="li-club">${label}</div>
           <div class="li-meta">Size ${item.size} · ${item.custom ? `${p.kit} · ${p.customName}` : p.kit}</div>
+          <div class="li-status ${isAvailable ? 'available' : 'unavailable'}">${isAvailable ? 'Available' : 'order request'}</div>
           <div class="li-controls">
             <button class="qty-btn" data-qty-down="${item.productId}" data-size="${item.size}">−</button>
             <span class="qty-val">${item.qty}</span>
@@ -269,15 +267,14 @@ function confirmStepHtml() {
   if (lastOrderNumber) {
     return `
       <div class="drawer-head">
-        <h3 class="display">Order Ready</h3>
+        <h3 class="display">Order added</h3>
         <button class="close-btn" id="closeBtn">×</button>
       </div>
       <div class="drawer-body">
         <div class="confirm-icon">✓</div>
         <div class="order-num">#${lastOrderNumber}</div>
         <p style="color:var(--ink-soft); font-size:14px; margin-bottom:20px; line-height:1.6;">
-          Your order is ready to send. Tap below to open WhatsApp with everything filled in —
-          just hit send and we'll confirm stock and payment with you directly.
+          Your order has been placed and is now visible to our team for processing.
         </p>
         <div class="summary-block">
           ${cart.map(item => {
@@ -295,7 +292,6 @@ function confirmStepHtml() {
         ${window.customer?.paymentMethod === 'monime' ? `<div class="payment-action"><span>Transfer to ${MONIME_RECIPIENT}</span><button class="copy-recipient-btn" id="copyRecipientBtn" type="button">Copy number</button></div>` : ''}
       </div>
       <div class="drawer-foot">
-        <a class="primary-btn whatsapp-btn" style="display:block; text-align:center; text-decoration:none;" href="${buildWhatsappLink()}" target="_blank" rel="noopener">Send order via WhatsApp</a>
         <button class="ghost-btn" id="newOrderBtn">Start a new order</button>
       </div>`;
   }
@@ -334,22 +330,3 @@ function confirmStepHtml() {
     </div>`;
 }
 
-function buildWhatsappLink() {
-  const lines = cart.map(item => {
-    const p = getCartProduct(item);
-    const productLabel = item.custom ? `${p.club} (${p.kit}) — ${p.customName}` : `${p.club} (${p.kit})`;
-    return `- ${productLabel}, Size ${item.size}, Qty ${item.qty}, ${CURRENCY} ${p.price * item.qty}`;
-  }).join('\n');
-  
-  const deliveryLabel = window.customer?.delivery !== 'pickup' ? ` — ${window.customer?.address}` : '';
-  
-  const msg = `New order #${lastOrderNumber} — JerseyHub SL\n\n${lines}\n\nSubtotal: ${CURRENCY} ${cartTotal()}\nDelivery: ${CURRENCY} ${deliveryCost()}\nTotal: ${CURRENCY} ${grandTotal()}\nPayment plan: ${paymentPlanLabel()}\nDue now: ${CURRENCY} ${paymentDue()}\nPayment method: ${paymentMethodLabel()}\n\nName: ${window.customer?.name}\nPhone: ${window.customer?.phone}\nDelivery: ${window.customer?.delivery}${deliveryLabel}${window.customer?.note ? '\nNote: ' + window.customer?.note : ''}`;
-  
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-}
-
-function buildAvailabilityRequestLink(productId) {
-  const product = PRODUCTS.find(item => item.id === productId);
-  const message = `Hi JerseyHub SL, I would like to order the ${product.club} ${product.kit}. Please let me know when it becomes available.`;
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-}

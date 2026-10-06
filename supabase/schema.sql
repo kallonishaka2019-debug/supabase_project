@@ -96,7 +96,7 @@ begin
     new.id,
     coalesce(nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''), 'JerseyHub customer'),
     nullif(trim(new.raw_user_meta_data ->> 'phone'), ''),
-    coalesce(nullif(trim(new.raw_user_meta_data ->> 'role'), ''), 'customer')
+    'customer'
   );
   return new;
 end;
@@ -126,6 +126,24 @@ create policy "Users can update their own profile"
 on public.profiles for update
 using (auth.uid() = id)
 with check (auth.uid() = id);
+
+create or replace function public.prevent_profile_role_change()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if auth.uid() = old.id and new.role is distinct from old.role then
+    raise exception 'Users cannot change their profile role';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_prevent_role_change on public.profiles;
+create trigger profiles_prevent_role_change
+before update of role on public.profiles
+for each row execute function public.prevent_profile_role_change();
 
 -- Customers can only see their own orders.
 drop policy if exists "Users can view their own orders" on public.orders;

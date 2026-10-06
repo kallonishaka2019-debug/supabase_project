@@ -4,8 +4,8 @@
 
 1. Open a terminal in `server/`.
 2. Run `npm install`.
-3. Copy `.env.example` to `.env` and set the Supabase variables.
-4. Run `supabase/migrate_products.sql` in the Supabase SQL Editor if the database already exists. For a brand-new database, run `supabase/schema.sql`. The server seeds the products table automatically on the next start when it is empty.
+3. Copy `.env.example` to `.env` and set the Supabase variables. Use the publishable key for `SUPABASE_PUBLISHABLE_KEY` and the server-only secret key for `SUPABASE_SECRET_KEY`.
+4. For an existing database, run `supabase/migrate_products.sql` and `supabase/migrate_auth_security.sql` in the Supabase SQL Editor. For a brand-new database, run `supabase/schema.sql`. The server seeds the products table automatically on the next start when it is empty.
 5. Run `npm start`.
 6. Open `http://localhost:3000/jersey.html` or `http://localhost:3000/admin.html`.
 
@@ -45,4 +45,6 @@ Row Level Security lets customers read and create only their own profile and ord
 3. In `jersey.html`, replace `SUPABASE_URL` with the Project URL and `SUPABASE_ANON_KEY` with the public anon key near the top of the script.
 4. Serve the site through a web server, for example `npm start` from this `server/` folder, then open `http://localhost:3000/jersey.html`.
 
-The anon key is intended for browser use. Do not put a Supabase service-role key in the HTML. When Supabase is configured, signup/login use Supabase Auth and **Place order** inserts checkout information into `public.orders` before opening WhatsApp.
+The publishable key identifies the public app; the secret key bypasses RLS and must remain server-only. Never put the secret key in HTML or browser JavaScript. Legacy `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` variables remain accepted while migrating existing deployments. When Supabase is configured, signup/login use Supabase Auth and **Place order** inserts checkout information into `public.orders` before opening WhatsApp.
+
+New accounts must confirm their email before logging in. Configure the Supabase confirmation email template to use `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=signup`, and allow the deployed `/api/auth/confirm` callback URL. Public signups always receive the customer role. Grant admin access only to a trusted, confirmed account through Supabase SQL Editor; never use a public signup request to assign roles. Audit existing admin profiles when upgrading.

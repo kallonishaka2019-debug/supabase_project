@@ -7,10 +7,5 @@
     "build": "echo 'Static site - no build needed'",
     "start": "cd server && npm start",
     "deploy": "npm run build && echo 'Deploy to Vercel: npx vercel'"
-  },
-  "vercel": {
-    "rewrites": [
-      { "source": "/api/(.*)", "destination": "/server/api/$1" }
-    ]
   }
 }

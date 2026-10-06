@@ -180,21 +180,34 @@ function bindFormEvents() {
 
 async function handleAccountSubmit(event) {
   event.preventDefault();
+
+  const submitButton = document.getElementById('accountSubmitBtn');
+  if (submitButton?.disabled) return;
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = 'Please wait...';
+  }
   
   const email = document.getElementById('accountEmail').value.trim();
   const password = document.getElementById('accountPassword').value;
+  const isRegister = accountView === 'register';
+  accountDraft = {
+    name: isRegister ? document.getElementById('accountName').value.trim() : accountDraft.name,
+    email,
+    phone: isRegister ? document.getElementById('accountPhone').value.trim() : accountDraft.phone
+  };
   
   try {
     const data = await requestAuth(
-      accountView === 'register' ? '/auth/register' : '/auth/login',
-      accountView === 'register'
+      isRegister ? '/auth/register' : '/auth/login',
+      isRegister
         ? {
-            name: document.getElementById('accountName').value.trim(),
-            email,
-            phone: document.getElementById('accountPhone').value.trim(),
+            name: accountDraft.name,
+            email: accountDraft.email,
+            phone: accountDraft.phone,
             password
           }
-        : { email, password }
+        : { email: accountDraft.email, password }
     );
 
     if (data.needsVerification) {
@@ -209,7 +222,7 @@ async function handleAccountSubmit(event) {
     window.customer.name = window.customer.name || data.user.name;
     window.customer.phone = window.customer.phone || data.user.phone;
     accountMessage = '';
-    saveCurrentSession();
+    accountDraft = { name: '', email: '', phone: '' };
     updateAccountButton();
     renderDrawer();
     showSuccess(accountView === 'register' ? 'Account created!' : 'Logged in!');
@@ -224,12 +237,21 @@ async function handleAccountSubmit(event) {
 }
 
 async function handleResendVerification() {
+  const resendButton = document.getElementById('resendVerificationBtn');
+  if (resendButton?.disabled) return;
+  if (resendButton) {
+    resendButton.disabled = true;
+    resendButton.textContent = 'Sending...';
+  }
+
   try {
     await requestAuth('/auth/resend', { email: pendingVerificationEmail });
-    showInfo('Confirmation email resent.');
+    accountMessage = '';
+    showInfo('Confirmation request accepted. Check your inbox and spam folder.');
   } catch (error) {
-    showError(getAuthErrorMessage(error));
+    accountMessage = getAuthErrorMessage(error);
   }
+  renderDrawer();
 }
 
 async function handleLogout() {
@@ -239,7 +261,6 @@ async function handleLogout() {
     // Clear UI even when server unavailable
   }
   currentAccount = null;
-  saveAccountData(loadAccounts(), null);
   updateAccountButton();
   renderDrawer();
   showInfo('Logged out successfully');
@@ -304,7 +325,7 @@ async function handlePlaceOrder() {
     const savedOrder = await saveCheckoutOrder();
     lastOrderNumber = Number(savedOrder?.order?.id ?? savedOrder?.id ?? Math.floor(1000 + Math.random() * 9000));
     renderDrawer();
-    showSuccess('Order placed successfully!');
+    showSuccess('✓ Order added');
   } catch (error) {
     placeOrderBtn.disabled = false;
     placeOrderBtn.textContent = 'Place order';

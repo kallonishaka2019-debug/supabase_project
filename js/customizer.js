@@ -57,7 +57,7 @@ function getCustomizerConfig() {
   const numberInput = document.getElementById('customNumber')?.value || '';
   const number = sanitizeCustomNumber(numberInput);
   const font = document.getElementById('customFont')?.value || 'classic';
-  const fontSizeInput = document.getElementById('customFontSize')?.value || '24';
+  const fontSizeInput = document.getElementById('customFontSize')?.value || '36';
   const fontSize = Number(fontSizeInput);
   const textWidthInput = document.getElementById('customTextWidth')?.value || '100';
   const textWidth = Number(textWidthInput);
@@ -71,7 +71,7 @@ function getCustomizerConfig() {
     name,
     number,
     font,
-    fontSize: Number.isFinite(fontSize) ? Math.min(Math.max(fontSize, 14), 36) : 24,
+    fontSize: Number.isFinite(fontSize) ? Math.min(Math.max(fontSize, 14), 72) : 36,
     textWidth: Number.isFinite(textWidth) ? Math.min(Math.max(textWidth, 70), 140) : 100,
     nameColor,
     size,
@@ -121,8 +121,8 @@ function generateSvgPreview(color, stripe, name, number, nameColor, fontFamily, 
     <path d="M34 18L16 30L22 50L36 44V128H84V44L98 50L104 30L86 18L72 28Q60 36 48 28Z" fill="${color}" stroke="${stripe}" stroke-width="3"/>
     <path d="M42 18L48 32H72L78 18" fill="${stripe}" opacity="0.86"/>
     <path d="M30 56H90" stroke="${stripe}" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
-    ${name ? `<text x="60" y="87" text-anchor="middle" fill="${nameColor}" font-family="${fontFamily}" font-size="12" font-weight="700">${name}</text>` : ''}
-    ${number !== '' ? `<text x="60" y="${name ? 108 : 87}" text-anchor="middle" fill="${nameColor}" font-family="${fontFamily}" font-size="20">${number}</text>` : ''}
+    ${name ? `<text x="60" y="87" text-anchor="middle" fill="${nameColor}" font-family="${fontFamily}" font-size="${fontSize / 2}" font-weight="700">${name}</text>` : ''}
+    ${number !== '' ? `<text x="60" y="${name ? 108 : 87}" text-anchor="middle" fill="${nameColor}" font-family="${fontFamily}" font-size="${fontSize * 5 / 6}">${number}</text>` : ''}
   </svg>`;
 }
 
@@ -138,7 +138,8 @@ function updateCustomizerMeta(config) {
     summaryKit: document.getElementById('summaryKit'),
     summaryName: document.getElementById('summaryName'),
     summarySize: document.getElementById('summarySize'),
-    summaryPrice: document.getElementById('summaryPrice')
+    summaryPrice: document.getElementById('summaryPrice'),
+    customAddBtn: document.getElementById('customAddBtn')
   };
   
   if (elements.previewName) elements.previewName.textContent = config.name || '—';
@@ -152,6 +153,10 @@ function updateCustomizerMeta(config) {
   if (elements.summaryName) elements.summaryName.textContent = config.name || '—';
   if (elements.summarySize) elements.summarySize.textContent = config.size;
   if (elements.summaryPrice) elements.summaryPrice.textContent = `Le ${CUSTOMIZER_PRICE}`;
+  if (elements.customAddBtn) {
+    const product = getCustomizerProduct(config.team, config.kit);
+    elements.customAddBtn.textContent = isProductAvailable(product) ? 'Add custom jersey' : 'Order this';
+  }
 }
 
 function populateCustomTeamOptions() {

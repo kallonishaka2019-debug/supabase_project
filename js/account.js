@@ -1,10 +1,8 @@
-const ACCOUNT_STORAGE_KEY = 'jerseyhub-accounts';
-const SESSION_STORAGE_KEY = 'jerseyhub-session';
-
 let accountView = 'login';
 let accountMessage = '';
 let currentAccount = null;
 let pendingVerificationEmail = '';
+let accountDraft = { name: '', email: '', phone: '' };
 
 const PAYMENT_PLANS = {
   full: { label: 'Pay in full', due: 1 },
@@ -39,43 +37,6 @@ function getAuthErrorMessage(error) {
   return message;
 }
 
-function loadAccounts() {
-  try {
-    const accounts = JSON.parse(localStorage.getItem(ACCOUNT_STORAGE_KEY));
-    return accounts && typeof accounts === 'object' ? accounts : {};
-  } catch {
-    return {};
-  }
-}
-
-function loadSession() {
-  try {
-    const session = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY));
-    return session?.email ? session : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveAccountData(accounts, session) {
-  try {
-    localStorage.setItem(ACCOUNT_STORAGE_KEY, JSON.stringify(accounts));
-    if (session) {
-      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-    } else {
-      localStorage.removeItem(SESSION_STORAGE_KEY);
-    }
-  } catch {
-    accountMessage = 'Accounts cannot be saved in this browser.';
-  }
-}
-
-function saveCurrentSession() {
-  if (currentAccount) {
-    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(currentAccount));
-  }
-}
-
 async function requestAuth(path, body) {
   const response = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
@@ -84,7 +45,14 @@ async function requestAuth(path, body) {
     body: JSON.stringify(body)
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Authentication failed');
+  if (!response.ok) {
+    const fallback = response.status === 404
+      ? 'Authentication endpoint not found (HTTP 404). The backend route may not be deployed.'
+      : response.status >= 500
+        ? `Authentication service unavailable (HTTP ${response.status}). Please try again.`
+        : `Authentication request failed (HTTP ${response.status}).`;
+    throw new Error(data.error || fallback);
+  }
   return data;
 }
 
@@ -92,21 +60,19 @@ async function restoreServerSession() {
   try {
     const response = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
     if (!response.ok) {
-      if (response.status === 401) currentAccount = null;
+      currentAccount = null;
       updateAccountButton();
       return;
     }
     const data = await response.json();
     currentAccount = data.user;
     window.customer.name = window.customer.name || currentAccount.name;
-    saveCurrentSession();
     updateAccountButton();
   } catch {
-    // Directly opened pages can continue using local prototype account
+    currentAccount = null;
+    updateAccountButton();
   }
 }
-
-currentAccount = loadSession();
 
 function updateAccountButton() {
   const accountButton = document.getElementById('openAccountBtn');
@@ -142,21 +108,23 @@ function accountStepHtml() {
       ${accountMessage ? `<p class="account-error" role="alert">${escapeHtml(accountMessage)}</p>` : ''}
       ${accountView === 'register' ? `
         <p class="account-intro">Create your account to track orders and checkout faster.</p>
-        <div class="field"><label for="accountName">Full name</label><input id="accountName" type="text" placeholder="e.g. Ishaka Kallon" required></div>
-        <div class="field"><label for="accountEmail">Email</label><input id="accountEmail" type="email" placeholder="e.g. abu@example.com" required></div>
-        <div class="field"><label for="accountPhone">Phone number</label><input id="accountPhone" type="tel" placeholder="e.g. 076 000 000" required></div>
-        <div class="field"><label for="accountPassword">Create password</label><input id="accountPassword" type="password" minlength="6" placeholder="At least 6 characters" required></div>
+        <div class="field"><label for="accountName">Full name</label><input id="accountName" type="text" autocomplete="name" value="${escapeHtml(accountDraft.name)}" placeholder="e.g. Ishaka Kallon" required></div>
+        <div class="field"><label for="accountEmail">Email</label><input id="accountEmail" type="email" autocomplete="email" value="${escapeHtml(accountDraft.email)}" placeholder="e.g. abu@example.com" required></div>
+        <div class="field"><label for="accountPhone">Phone number</label><input id="accountPhone" type="tel" autocomplete="tel" value="${escapeHtml(accountDraft.phone)}" placeholder="e.g. 076 000 000" required></div>
+        <div class="field"><label for="accountPassword">Create password</label><input id="accountPassword" type="password" autocomplete="new-password" minlength="6" placeholder="At least 6 characters" required></div>
         <button class="primary-btn" type="submit" id="accountSubmitBtn">Create Account</button>
+        <a class="ghost-btn" id="googleSignInBtn" href="${API_BASE}/auth/google" style="text-align:center;text-decoration:none;display:block;">Continue with Google</a>
         <button class="account-switch" id="accountSwitchBtn" type="button">Already have an account? Log in</button>
       ` : accountView === 'verify-sent' ? `
-        <p class="account-intro">We sent a confirmation link to <strong>${escapeHtml(pendingVerificationEmail)}</strong>. Click it to activate your account, then log in.</p>
+          <p class="account-intro">Your account is awaiting email confirmation for <strong>${escapeHtml(pendingVerificationEmail)}</strong>. Check your inbox and spam folder for the confirmation link. If it hasn’t arrived, request another below.</p>
         <button class="primary-btn" type="button" id="resendVerificationBtn">Resend confirmation email</button>
         <button class="account-switch" id="accountSwitchBtn" type="button">Back to log in</button>
       ` : `
         <p class="account-intro">Log in with your email to continue.</p>
-        <div class="field"><label for="accountEmail">Email</label><input id="accountEmail" type="email" placeholder="e.g. abu@example.com" required></div>
-        <div class="field"><label for="accountPassword">Password</label><input id="accountPassword" type="password" placeholder="Your password" required></div>
+        <div class="field"><label for="accountEmail">Email</label><input id="accountEmail" type="email" autocomplete="username" value="${escapeHtml(accountDraft.email)}" placeholder="e.g. abu@example.com" required></div>
+        <div class="field"><label for="accountPassword">Password</label><input id="accountPassword" type="password" autocomplete="current-password" placeholder="Your password" required></div>
         <button class="primary-btn" type="submit" id="accountSubmitBtn">Log In</button>
+        <a class="ghost-btn" id="googleSignInBtn" href="${API_BASE}/auth/google" style="text-align:center;text-decoration:none;display:block;">Continue with Google</a>
         <button class="account-switch" id="accountSwitchBtn" type="button">New here? Create account</button>
       `}
     </form>`;

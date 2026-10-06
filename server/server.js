@@ -4,12 +4,12 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { createClient } = require("@supabase/supabase-js");
+const { registerAuthRoutes } = require("./auth");
 const fs = require("fs");
 require("dotenv").config();
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
-const adminEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
 const appBaseUrl = String(process.env.APP_BASE_URL || `http://localhost:${port}`).replace(/\/$/, '');
 const monimeApiKey = String(process.env.MONIME_API_KEY || '').trim();
 const monimeSecretKey = String(process.env.MONIME_SECRET_KEY || '').trim();
@@ -17,20 +17,20 @@ const monimeBaseUrl = String(process.env.MONIME_BASE_URL || '').trim().replace(/
 const monimeWebhookSecret = String(process.env.MONIME_WEBHOOK_SECRET || '').trim();
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// supabaseAuth performs user-context auth calls (sign in, token refresh) using the public anon key.
-const supabaseAuth = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey, { auth: { autoRefreshToken: false, persistSession: false } })
+// User auth uses a publishable key; privileged database and admin operations stay server-side.
+const supabaseAuth = supabaseUrl && supabasePublishableKey
+  ? createClient(supabaseUrl, supabasePublishableKey, { auth: { autoRefreshToken: false, persistSession: false } })
   : null;
-// supabaseAdmin uses the secret service-role key and must never be exposed to the browser.
-const supabaseAdmin = supabaseUrl && supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, { auth: { autoRefreshToken: false, persistSession: false } })
+// The secret key bypasses RLS and must never be exposed to the browser.
+const supabaseAdmin = supabaseUrl && supabaseSecretKey
+  ? createClient(supabaseUrl, supabaseSecretKey, { auth: { autoRefreshToken: false, persistSession: false } })
   : null;
 
 if (!supabaseAuth || !supabaseAdmin) {
-  console.warn("Supabase is not fully configured. Set SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY in server/.env");
+  console.warn("Supabase is not fully configured. Set SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and SUPABASE_SECRET_KEY in the server environment.");
 }
 
 let products = [];
@@ -98,90 +98,14 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "100kb" }));
 app.use(cookieParser());
 
-function ensureSupabase(request, response, next) {
-  if (!supabaseAuth || !supabaseAdmin) {
-    return response.status(500).json({ error: "Supabase is not configured on the server" });
-  }
-  next();
-}
-
-function setAuthCookies(response, session) {
-  const secure = process.env.NODE_ENV === "production";
-  response.cookie("sb_access_token", session.access_token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure,
-    maxAge: (session.expires_in || 3600) * 1000,
-  });
-  response.cookie("sb_refresh_token", session.refresh_token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure,
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-  });
-}
-
-function clearAuthCookies(response) {
-  response.clearCookie("sb_access_token");
-  response.clearCookie("sb_refresh_token");
-}
-
-async function loadProfile(request, authUser) {
-  const { data: profile, error } = await supabaseAdmin
-    .from("profiles")
-    .select("full_name, phone, role")
-    .eq("id", authUser.id)
-    .single();
-  if (error || !profile) return null;
-  request.user = {
-    id: authUser.id,
-    email: authUser.email,
-    name: profile.full_name,
-    phone: profile.phone || "",
-    is_admin: profile.role === "admin",
-  };
-  return request.user;
-}
-
-async function requireAuth(request, response, next) {
-  if (!supabaseAuth || !supabaseAdmin) {
-    return response.status(500).json({ error: "Supabase is not configured on the server" });
-  }
-
-  const accessToken = request.cookies.sb_access_token;
-  const refreshToken = request.cookies.sb_refresh_token;
-
-  if (accessToken) {
-    const { data, error } = await supabaseAuth.auth.getUser(accessToken);
-    if (!error && data?.user) {
-      const user = await loadProfile(request, data.user);
-      if (user) return next();
-    }
-  }
-
-  if (refreshToken) {
-    const { data, error } = await supabaseAuth.auth.refreshSession({ refresh_token: refreshToken });
-    if (!error && data?.session) {
-      setAuthCookies(response, data.session);
-      const user = await loadProfile(request, data.session.user);
-      if (user) return next();
-    }
-  }
-
-  clearAuthCookies(response);
-  return response.status(401).json({ error: "Session is invalid" });
-}
-
-function requireAdmin(request, response, next) {
-  requireAuth(request, response, () => {
-    if (!request.user?.is_admin) return response.status(403).json({ error: "Admin access required" });
-    next();
-  });
-}
-
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
+const { ensureSupabase, requireAuth, requireAdmin } = registerAuthRoutes(app, {
+  supabaseAuth,
+  supabaseAdmin,
+  supabaseUrl,
+  supabasePublishableKey,
+  appBaseUrl,
+  nodeEnv: process.env.NODE_ENV,
+});
 
 function getMonimeCheckoutUrl(data = {}) {
   return String(
@@ -197,132 +121,6 @@ function getMonimeCheckoutUrl(data = {}) {
     ""
   ).trim();
 }
-
-app.post("/api/auth/register", ensureSupabase, async (request, response) => {
-  const name = String(request.body?.name || "").trim();
-  const email = String(request.body?.email || "").trim().toLowerCase();
-  const phone = String(request.body?.phone || "").trim();
-  const password = String(request.body?.password || "");
-
-  if (name.length < 2) {
-    return response.status(400).json({ error: "Name must be at least 2 characters" });
-  }
-  if (!isValidEmail(email)) {
-    return response.status(400).json({ error: "Please enter a valid email address" });
-  }
-  if (!phone) {
-    return response.status(400).json({ error: "Phone number is required" });
-  }
-  if (password.length < 6) {
-    return response.status(400).json({ error: "Password must be at least 6 characters" });
-  }
-
-  const { data: created, error: createError } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { full_name: name, phone },
-  });
-
-  if (createError) {
-    const message = /already.*registered/i.test(createError.message)
-      ? "This email is already registered. Try logging in."
-      : createError.message;
-    return response.status(409).json({ error: message });
-  }
-
-  const isAdmin = Boolean(adminEmail && email === adminEmail);
-  if (isAdmin && created?.user) {
-    await supabaseAdmin.from("profiles").update({ role: "admin" }).eq("id", created.user.id);
-  }
-
-  const { data: signInData, error: signInError } = await supabaseAuth.auth.signInWithPassword({ email, password });
-  if (signInError || !signInData?.session) {
-    return response.status(500).json({ error: "Account created but sign-in failed. Please log in." });
-  }
-
-  setAuthCookies(response, signInData.session);
-  return response.status(201).json({
-    success: true,
-    user: { name, email, phone, is_admin: isAdmin },
-  });
-});
-
-app.get("/api/auth/confirm", ensureSupabase, async (request, response) => {
-  const tokenHash = String(request.query?.token_hash || "");
-  const type = String(request.query?.type || "signup");
-
-  if (!tokenHash) {
-    return response.redirect("/jersey.html?verified=0");
-  }
-
-  const { data, error } = await supabaseAuth.auth.verifyOtp({ token_hash: tokenHash, type });
-  if (error || !data?.session) {
-    return response.redirect("/jersey.html?verified=0");
-  }
-
-  setAuthCookies(response, data.session);
-  return response.redirect("/jersey.html?verified=1");
-});
-
-app.post("/api/auth/resend", ensureSupabase, async (request, response) => {
-  const email = String(request.body?.email || "").trim().toLowerCase();
-  if (!isValidEmail(email)) {
-    return response.status(400).json({ error: "Please enter a valid email address" });
-  }
-
-  const { error } = await supabaseAuth.auth.resend({
-    type: "signup",
-    email,
-    options: { emailRedirectTo: `${appBaseUrl}/api/auth/confirm` },
-  });
-  if (error) return response.status(400).json({ error: error.message });
-  return response.json({ success: true, message: "Confirmation email resent." });
-});
-
-app.post("/api/auth/login", ensureSupabase, async (request, response) => {
-  const email = String(request.body?.email || "").trim().toLowerCase();
-  const password = String(request.body?.password || "");
-
-  if (!isValidEmail(email) || !password) {
-    return response.status(400).json({ error: "Email and password are required" });
-  }
-
-  const { data, error } = await supabaseAuth.auth.signInWithPassword({ email, password });
-  if (error || !data?.session) {
-    const message = /email not confirmed/i.test(error?.message || "")
-      ? "Please confirm your email before logging in. Check your inbox or resend the confirmation link."
-      : "Invalid email or password";
-    return response.status(401).json({ error: message });
-  }
-
-  setAuthCookies(response, data.session);
-
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("full_name, phone, role")
-    .eq("id", data.user.id)
-    .single();
-
-  return response.json({
-    success: true,
-    user: {
-      name: profile?.full_name || "Customer",
-      email,
-      phone: profile?.phone || "",
-      is_admin: profile?.role === "admin",
-    },
-  });
-});
-
-app.get("/api/auth/me", ensureSupabase, requireAuth, (request, response) => {
-  response.json({ user: request.user });
-});
-
-app.post("/api/auth/logout", (request, response) => {
-  clearAuthCookies(response);
-  response.status(204).end();
-});
 
 app.get("/api/products", async (request, response) => {
   const catalog = await readCatalogProducts();

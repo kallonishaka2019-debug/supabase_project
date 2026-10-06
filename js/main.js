@@ -23,6 +23,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.history.replaceState({}, '', window.location.pathname);
   }
 
+  const googleParam = new URLSearchParams(window.location.search).get('google');
+  if (googleParam) {
+    showSuccess(googleParam === '1' ? 'Signed in with Google!' : 'Google sign-in failed. Please try again.');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
   const paymentParam = new URLSearchParams(window.location.search).get('payment');
   if (paymentParam) {
     const paymentMessage = paymentParam === 'success'

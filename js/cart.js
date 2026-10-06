@@ -19,7 +19,7 @@ function validateCartItem(item) {
     return SIZES.includes(item.size) && Number.isInteger(item.qty) && item.qty > 0 && typeof item.customTeam === 'string';
   }
   const product = PRODUCTS.find(candidate => candidate.id === item.productId);
-  return product && isProductAvailable(product) && SIZES.includes(item.size) && Number.isInteger(item.qty) && item.qty > 0;
+  return product && SIZES.includes(item.size) && Number.isInteger(item.qty) && item.qty > 0;
 }
 
 function persistCart() {
@@ -48,6 +48,7 @@ function persistWishlist() {
 }
 
 function addToCart(productId, size) {
+  const product = PRODUCTS.find(candidate => candidate.id === productId);
   const existing = cart.find(i => i.productId === productId && i.size === size);
   if (existing) {
     existing.qty += 1;
@@ -56,7 +57,7 @@ function addToCart(productId, size) {
   }
   persistCart();
   updateCartCount();
-  showSuccess('Added to cart!');
+  showSuccess(product && isProductAvailable(product) ? '✓ Added to cart' : '✓ Order request added');
 }
 
 function addCustomJerseyToCart(config) {
@@ -74,11 +75,13 @@ function addCustomJerseyToCart(config) {
     stripe: getTeamPalette(config.team).stripe,
     customStyle: config.font,
     customNameColor: config.nameColor,
+    customAvailable: isProductAvailable(getCustomizerProduct(config.team, config.kit)),
   };
   cart.push(customItem);
   persistCart();
   updateCartCount();
-  showSuccess('Custom jersey added to cart!');
+  const product = getCustomizerProduct(config.team, config.kit);
+  showSuccess(isProductAvailable(product) ? '✓ Added to cart' : '✓ Order request added');
 }
 
 function updateQty(productId, size, delta) {
@@ -153,7 +156,7 @@ function getCartProduct(item) {
       customStyle: item.customStyle,
       image: null,
       custom: true,
-      available: true,
+      available: item.customAvailable !== false,
     };
   }
   return PRODUCTS.find(candidate => candidate.id === item.productId) || null;

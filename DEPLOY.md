@@ -17,11 +17,9 @@ npx vercel
 
 ### 3. Set Environment Variables in Vercel Dashboard
 
-- `SUPABASE_URL`: Your Supabase project URL
-- `SUPABASE_ANON_KEY`: Your Supabase anon key
-- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service-role key; keep this server-side only
-- `ADMIN_EMAIL`: Email address that should receive admin access
-- `MONIME_API_KEY`: Your Monime API key
+- `SUPABASE_URL`: https://YOUR-PROJECT-REF.supabase.co
+- `SUPABASE_PUBLISHABLE_KEY`: Your Supabase publishable key
+- `SUPABASE_SECRET_KEY`: Your Supabase secret key (never commit this)
 - `MONIME_SECRET_KEY`: Your Monime secret key
 - `MONIME_WEBHOOK_SECRET`: Secret used to verify Monime callbacks
 - `MONIME_BASE_URL`: The actual Monime API base URL
@@ -51,10 +49,9 @@ Add these in Railway dashboard:
 
 - `PORT`: 3000
 - `NODE_ENV`: production
-- `SUPABASE_URL`: Your Supabase URL
-- `SUPABASE_ANON_KEY`: Your Supabase anon key
-- `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service-role key
-- `ADMIN_EMAIL`: Email address that should receive admin access
+- `SUPABASE_URL`: https://YOUR-PROJECT-REF.supabase.co
+- `SUPABASE_PUBLISHABLE_KEY`: Your Supabase publishable key
+- `SUPABASE_SECRET_KEY`: Your Supabase secret key (never commit this)
 - `MONIME_API_KEY`: Your Monime API key
 - `MONIME_SECRET_KEY`: Your Monime secret key
 - `MONIME_WEBHOOK_SECRET`: Secret used to verify Monime callbacks
@@ -92,9 +89,23 @@ For static hosting without backend:
 ## Supabase Setup
 
 1. Create project at [supabase.com](https://supabase.com)
-2. For an existing database, go to SQL Editor and run `supabase/migrate_products.sql`. It modifies the current database without dropping or recreating existing tables. For a brand-new database, run `supabase/schema.sql` instead.
+2. For an existing database, run `supabase/migrate_products.sql` and `supabase/migrate_auth_security.sql` in the SQL Editor. For a brand-new database, run `supabase/schema.sql` instead.
 3. Get API keys from Settings → API
 4. Add credentials to your deployment environment
+
+Set Supabase Auth's **Site URL** and allowed redirect URLs to your deployed HTTPS URL. Set the confirmation email template link to `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=signup` so it reaches the server's token-hash callback.
+
+Public signups are always customers. To grant admin access, first create and confirm the trusted account, then run this query in the Supabase SQL Editor with its email:
+
+```sql
+update public.profiles p
+set role = 'admin'
+from auth.users u
+where p.id = u.id
+	and lower(u.email) = lower('trusted-admin@example.com');
+```
+
+Review existing `admin` profiles after applying the migration and remove any roles that were not intentionally granted.
 
 After deployment, open the admin panel and use **Products** to edit availability, prices, images, and product details. The **Add Product** tab creates new catalog entries and the edit/delete actions update Supabase directly.
 
