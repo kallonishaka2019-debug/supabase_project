@@ -191,7 +191,7 @@ nav a {
   font: inherit;
 }
 .grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 28px;
 }
 .shop-head {
@@ -865,7 +865,6 @@ footer p {
     flex-direction: column;
   }
   .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
   }
   .card-body {
@@ -879,10 +878,19 @@ footer p {
   }
 }
 @media (max-width: 420px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
   .header-inner {
     padding: 14px 16px;
+  }
+}
+
+/* Product grid: 3 columns on desktop, 2 on tablets and landscape phones, 1 on portrait phones */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
   }
 }
