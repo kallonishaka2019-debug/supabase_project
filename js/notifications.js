@@ -98,7 +98,7 @@ function validateCheckoutForm() {
   }
   
   const address = document.getElementById('fAddress')?.value?.trim();
-  const delivery = document.querySelector('input[name="delivery"]:checked')?.value;
+  const delivery = window.customer?.delivery;
   if (delivery === 'delivery' && !address) {
     setFieldError('fAddress', 'Please enter your delivery address');
     isValid = false;

@@ -141,6 +141,8 @@ function renderDrawer() {
     content.innerHTML = detailsStepHtml();
   } else if (checkoutStep === 'confirm') {
     content.innerHTML = confirmStepHtml();
+  } else if (checkoutStep === 'payment') {
+    content.innerHTML = paymentStepHtml();
   }
   
   bindDrawerEvents();
@@ -198,12 +200,19 @@ function cartStepHtml() {
 }
 
 function detailsStepHtml() {
-  const deliveryOptionsHtml = Object.entries(DELIVERY_OPTIONS).map(([key, opt]) => `
-    <label class="radio-opt ${window.customer?.delivery === key ? 'active' : ''}">
-      <input type="radio" name="deliveryType" value="${key}" ${window.customer?.delivery === key ? 'checked' : ''}> 
-      ${key.charAt(0).toUpperCase() + key.slice(1)} (${opt.cost === 0 ? 'Free' : `${CURRENCY} ${opt.cost}`})
+  const isDelivery = window.customer?.delivery === 'delivery';
+  const deliveryOptionsHtml = `
+    <label class="radio-opt ${!isDelivery ? 'active' : ''}">
+      <input type="radio" name="deliveryType" value="pickup" ${!isDelivery ? 'checked' : ''}> Pickup (Free)
     </label>
-  `).join('');
+    <label class="radio-opt ${isDelivery ? 'active' : ''}">
+      <input type="radio" name="deliveryType" value="delivery" ${isDelivery ? 'checked' : ''}> Delivery
+    </label>`;
+  const deliveryTierHtml = Object.entries(DELIVERY_OPTIONS)
+    .filter(([key]) => key !== 'pickup')
+    .sort((a, b) => a[1].cost - b[1].cost)
+    .map(([key, opt]) => `<option value="${key}" ${window.customer?.deliveryTier === key ? 'selected' : ''}>${key.charAt(0).toUpperCase() + key.slice(1)} — ${CURRENCY} ${opt.cost} (${opt.estimatedDays})</option>`)
+    .join('');
   
   return `
     <div class="drawer-head">
@@ -212,25 +221,15 @@ function detailsStepHtml() {
     </div>
     <div class="drawer-body">
       <button class="back-link" id="backToCartBtn">← Back to cart</button>
-      <span class="step-label">Step 1 of 2 — Your details</span>
+      <span class="step-label">Step 1 of 3 — Your details</span>
       
       <div class="field">
         <label for="fName">Full name</label>
         <input id="fName" type="text" value="${window.customer?.name || ''}" placeholder="e.g. Ishaka Kallon">
       </div>
       <div class="field">
-        <label for="fPhone">Phone (WhatsApp)</label>
+        <label for="fPhone">Phone</label>
         <input id="fPhone" type="tel" value="${window.customer?.phone || ''}" placeholder="e.g. 076 000 000">
-      </div>
-      <div class="field">
-        <label>Payment method</label>
-        <div class="radio-row">
-          ${Object.entries(PAYMENT_METHODS).map(([value, label]) => `
-            <label class="radio-opt ${window.customer?.paymentMethod === value ? 'active' : ''}">
-              <input type="radio" name="paymentMethod" value="${value}" ${window.customer?.paymentMethod === value ? 'checked' : ''}> ${label}
-            </label>`).join('')}
-        </div>
-        ${window.customer?.paymentMethod === 'monime' ? `<p class="payment-hint">After stock is confirmed, transfer <strong>${CURRENCY} ${paymentDue()}</strong> to <strong>${MONIME_RECIPIENT}</strong>. <button class="copy-recipient-btn" id="copyRecipientBtn" type="button">Copy number</button></p>` : ''}
       </div>
       <div class="field">
         <label>Delivery method</label>
@@ -238,16 +237,11 @@ function detailsStepHtml() {
           ${deliveryOptionsHtml}
         </div>
       </div>
-      <div class="field">
-        <label>Payment plan</label>
-        <div class="radio-row payment-row">
-          ${Object.entries(PAYMENT_PLANS).map(([value, plan]) => `
-            <label class="radio-opt ${window.customer?.paymentPlan === value ? 'active' : ''}">
-              <input type="radio" name="paymentPlan" value="${value}" ${window.customer?.paymentPlan === value ? 'checked' : ''}> ${plan.label}
-            </label>`).join('')}
-        </div>
+      <div class="field" id="tierField" style="${isDelivery ? '' : 'display:none;'}">
+        <label for="fDeliveryTier">Delivery cost</label>
+        <select id="fDeliveryTier">${deliveryTierHtml}</select>
       </div>
-      <div class="field" id="addressField" style="${window.customer?.delivery === 'pickup' || !window.customer?.delivery ? 'display:none;' : ''}">
+      <div class="field" id="addressField" style="${isDelivery ? '' : 'display:none;'}">
         <label for="fAddress">Delivery address</label>
         <textarea id="fAddress" placeholder="Street, area, landmark">${window.customer?.address || ''}</textarea>
       </div>
@@ -257,7 +251,6 @@ function detailsStepHtml() {
       </div>
     </div>
     <div class="drawer-foot">
-      <div class="subtotal-row"><span>Payment due now</span><span>${CURRENCY} ${paymentDue()}</span></div>
       <div class="total-row"><span>Total</span><span class="display">${CURRENCY} ${grandTotal()}</span></div>
       <button class="primary-btn" id="toConfirmBtn">Review order</button>
     </div>`;
@@ -285,8 +278,6 @@ function confirmStepHtml() {
           <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
             <span>Total</span><span>${CURRENCY} ${grandTotal()}</span>
           </div>
-          <div class="li-row"><span>Payment plan</span><span>${paymentPlanLabel()}</span></div>
-          <div class="li-row"><span>Due now</span><span>${CURRENCY} ${paymentDue()}</span></div>
           <div class="li-row"><span>Payment method</span><span>${paymentMethodLabel()}</span></div>
         </div>
         ${window.customer?.paymentMethod === 'monime' ? `<div class="payment-action"><span>Transfer to ${MONIME_RECIPIENT}</span><button class="copy-recipient-btn" id="copyRecipientBtn" type="button">Copy number</button></div>` : ''}
@@ -303,7 +294,7 @@ function confirmStepHtml() {
     </div>
     <div class="drawer-body">
       <button class="back-link" id="backToDetailsBtn">← Back to details</button>
-      <span class="step-label">Step 2 of 2 — Confirm</span>
+      <span class="step-label">Step 2 of 3 — Review</span>
       <div class="summary-block">
         ${cart.map(item => {
           const p = getCartProduct(item);
@@ -313,20 +304,44 @@ function confirmStepHtml() {
         <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
           <span>Total</span><span>${CURRENCY} ${grandTotal()}</span>
         </div>
-        <div class="li-row"><span>Payment plan</span><span>${paymentPlanLabel()}</span></div>
-        <div class="li-row"><span>Due now</span><span>${CURRENCY} ${paymentDue()}</span></div>
       </div>
       <div class="summary-block">
         <div class="li-row"><span>Name</span><span>${window.customer?.name || '—'}</span></div>
         <div class="li-row"><span>Phone</span><span>${window.customer?.phone || '—'}</span></div>
         <div class="li-row"><span>Delivery</span><span style="text-transform:capitalize;">${window.customer?.delivery || 'pickup'}</span></div>
         ${window.customer?.delivery !== 'pickup' ? `<div class="li-row"><span>Address</span><span>${window.customer?.address || '—'}</span></div>` : ''}
-        <div class="li-row"><span>Payment</span><span>${paymentPlanLabel()}</span></div>
-        <div class="li-row"><span>Method</span><span>${paymentMethodLabel()}</span></div>
+        ${window.customer?.delivery === 'delivery' ? `<div class="li-row"><span>Delivery cost</span><span>${CURRENCY} ${deliveryCost()}</span></div>` : ''}
       </div>
     </div>
     <div class="drawer-foot">
-      <button class="primary-btn" id="placeOrderBtn">Place order</button>
+      <button class="primary-btn" id="toPaymentBtn">Continue to payment</button>
+    </div>`;
+}
+
+function paymentStepHtml() {
+  if (lastOrderNumber) return confirmStepHtml();
+
+  return `
+    <div class="drawer-head">
+      <h3 class="display">Make Payment</h3>
+      <button class="close-btn" id="closeBtn">×</button>
+    </div>
+    <div class="drawer-body">
+      <button class="back-link" id="backToReviewBtn">← Back to review</button>
+      <span class="step-label">Step 3 of 3 — Make payment</span>
+      <div class="field">
+        <label>Payment method</label>
+        <div class="radio-row">
+          ${Object.entries(PAYMENT_METHODS).map(([value, label]) => `
+            <label class="radio-opt ${window.customer?.paymentMethod === value ? 'active' : ''}">
+              <input type="radio" name="paymentMethod" value="${value}" ${window.customer?.paymentMethod === value ? 'checked' : ''}> ${label}
+            </label>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="drawer-foot">
+      <div class="total-row"><span>Total</span><span class="display">${CURRENCY} ${grandTotal()}</span></div>
+      <button class="primary-btn" id="placeOrderBtn">Make payment</button>
     </div>`;
 }
 

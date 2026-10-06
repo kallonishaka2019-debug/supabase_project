@@ -84,6 +84,23 @@ function bindDrawerEvents() {
   
   bindFormEvents();
   
+  const toPaymentBtn = document.getElementById('toPaymentBtn');
+  if (toPaymentBtn) {
+    toPaymentBtn.addEventListener('click', () => {
+      checkoutStep = 'payment';
+      lastOrderNumber = null;
+      renderDrawer();
+    });
+  }
+
+  const backToReviewBtn = document.getElementById('backToReviewBtn');
+  if (backToReviewBtn) {
+    backToReviewBtn.addEventListener('click', () => {
+      checkoutStep = 'confirm';
+      renderDrawer();
+    });
+  }
+
   const toConfirmBtn = document.getElementById('toConfirmBtn');
   if (toConfirmBtn) {
     toConfirmBtn.addEventListener('click', () => {
@@ -105,7 +122,7 @@ function bindDrawerEvents() {
       clearCart();
       window.customer = {
         name: '', phone: '', address: '',
-        delivery: 'pickup', paymentPlan: 'full',
+        delivery: 'pickup', deliveryTier: 'standard', paymentPlan: 'full',
         paymentMethod: 'monime', note: ''
       };
       lastOrderNumber = null;
@@ -163,13 +180,14 @@ function bindFormEvents() {
     });
   });
   
-  document.querySelectorAll('input[name="paymentPlan"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      window.customer.paymentPlan = e.target.value;
+  const fDeliveryTier = document.getElementById('fDeliveryTier');
+  if (fDeliveryTier) {
+    fDeliveryTier.addEventListener('change', (e) => {
+      window.customer.deliveryTier = e.target.value;
       renderDrawer();
     });
-  });
-  
+  }
+
   document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
       window.customer.paymentMethod = e.target.value;
@@ -310,14 +328,14 @@ async function handlePlaceOrder() {
           window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
           showSuccess('Monime checkout opened. Complete the payment to finish your order.');
           placeOrderBtn.disabled = false;
-          placeOrderBtn.textContent = 'Place order';
+          placeOrderBtn.textContent = 'Make payment';
           return;
         }
         throw new Error('Monime checkout URL was not returned by the payment provider.');
       } catch (error) {
         showError(error.message || 'Monime checkout is not ready yet.');
         placeOrderBtn.disabled = false;
-        placeOrderBtn.textContent = 'Place order';
+        placeOrderBtn.textContent = 'Make payment';
         return;
       }
     }
@@ -328,7 +346,7 @@ async function handlePlaceOrder() {
     showSuccess('✓ Order added');
   } catch (error) {
     placeOrderBtn.disabled = false;
-    placeOrderBtn.textContent = 'Place order';
+    placeOrderBtn.textContent = 'Make payment';
     showError(error.message || 'Could not save your order.');
   }
 }

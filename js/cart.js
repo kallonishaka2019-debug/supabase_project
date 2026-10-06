@@ -123,7 +123,7 @@ function cartItemCount() {
 }
 
 function deliveryCost() {
-  const delivery = window.customer?.delivery || 'pickup';
+  const delivery = window.customer?.delivery === 'delivery' ? (window.customer.deliveryTier || 'standard') : 'pickup';
   return DELIVERY_OPTIONS[delivery]?.cost || 0;
 }
 

@@ -20,6 +20,7 @@ window.customer = {
   phone: '',
   address: '',
   delivery: 'pickup',
+  deliveryTier: 'standard',
   paymentPlan: 'full',
   paymentMethod: 'monime',
   note: ''
@@ -200,7 +201,7 @@ async function saveCheckoutOrder() {
   const payload = {
     customerName: window.customer.name.trim(),
     customerPhone: window.customer.phone.trim(),
-    deliveryMethod: window.customer.delivery,
+    deliveryMethod: window.customer.delivery === 'pickup' ? 'pickup' : window.customer.deliveryTier,
     deliveryAddress: window.customer.delivery !== 'pickup' ? window.customer.address.trim() : '',
     paymentMethod: window.customer.paymentMethod,
     paymentPlan: window.customer.paymentPlan,
@@ -228,8 +229,7 @@ function paymentPlanLabel() {
 }
 
 function paymentDue() {
-  const dueRate = PAYMENT_PLANS[window.customer.paymentPlan]?.due ?? 1;
-  return Math.ceil(grandTotal() * dueRate);
+  return grandTotal();
 }
 
 function paymentMethodLabel() {
