@@ -101,33 +101,14 @@ function accountStepHtml() {
 
   return `
     <div class="drawer-head">
-      <h3 class="display">${accountView === 'register' ? 'Create Account' : accountView === 'verify-sent' ? 'Confirm Your Email' : 'Welcome Back'}</h3>
+      <h3 class="display">Welcome</h3>
       <button class="close-btn" id="closeBtn">×</button>
     </div>
-    <form class="account-body" id="accountForm">
+    <div class="account-body">
       ${accountMessage ? `<p class="account-error" role="alert">${escapeHtml(accountMessage)}</p>` : ''}
-      ${accountView === 'register' ? `
-        <p class="account-intro">Create your account to track orders and checkout faster.</p>
-        <div class="field"><label for="accountName">Full name</label><input id="accountName" type="text" autocomplete="name" value="${escapeHtml(accountDraft.name)}" placeholder="e.g. Ishaka Kallon" required></div>
-        <div class="field"><label for="accountEmail">Email</label><input id="accountEmail" type="email" autocomplete="email" value="${escapeHtml(accountDraft.email)}" placeholder="e.g. abu@example.com" required></div>
-        <div class="field"><label for="accountPhone">Phone number</label><input id="accountPhone" type="tel" autocomplete="tel" value="${escapeHtml(accountDraft.phone)}" placeholder="e.g. 076 000 000" required></div>
-        <div class="field"><label for="accountPassword">Create password</label><input id="accountPassword" type="password" autocomplete="new-password" minlength="6" placeholder="At least 6 characters" required></div>
-        <button class="primary-btn" type="submit" id="accountSubmitBtn">Create Account</button>
-        <a class="ghost-btn" id="googleSignInBtn" href="${API_BASE}/auth/google" style="text-align:center;text-decoration:none;display:block;">Continue with Google</a>
-        <button class="account-switch" id="accountSwitchBtn" type="button">Already have an account? Log in</button>
-      ` : accountView === 'verify-sent' ? `
-          <p class="account-intro">Your account is awaiting email confirmation for <strong>${escapeHtml(pendingVerificationEmail)}</strong>. Check your inbox and spam folder for the confirmation link. If it hasn’t arrived, request another below.</p>
-        <button class="primary-btn" type="button" id="resendVerificationBtn">Resend confirmation email</button>
-        <button class="account-switch" id="accountSwitchBtn" type="button">Back to log in</button>
-      ` : `
-        <p class="account-intro">Log in with your email to continue.</p>
-        <div class="field"><label for="accountEmail">Email</label><input id="accountEmail" type="email" autocomplete="username" value="${escapeHtml(accountDraft.email)}" placeholder="e.g. abu@example.com" required></div>
-        <div class="field"><label for="accountPassword">Password</label><input id="accountPassword" type="password" autocomplete="current-password" placeholder="Your password" required></div>
-        <button class="primary-btn" type="submit" id="accountSubmitBtn">Log In</button>
-        <a class="ghost-btn" id="googleSignInBtn" href="${API_BASE}/auth/google" style="text-align:center;text-decoration:none;display:block;">Continue with Google</a>
-        <button class="account-switch" id="accountSwitchBtn" type="button">New here? Create account</button>
-      `}
-    </form>`;
+      <p class="account-intro">Sign in with your Google account to track orders and checkout faster.</p>
+      <a class="primary-btn" id="googleSignInBtn" href="${API_BASE}/auth/google" style="text-align:center;text-decoration:none;display:block;">Continue with Google</a>
+    </div>`;
 }
 
 function ordersStepHtml() {
