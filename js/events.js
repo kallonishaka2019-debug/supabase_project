@@ -123,7 +123,7 @@ function bindDrawerEvents() {
       window.customer = {
         name: '', phone: '', address: '',
         delivery: 'pickup', deliveryTier: 'standard', paymentPlan: 'full',
-        paymentMethod: 'monime', note: ''
+        paymentMethod: 'orange_money', note: ''
       };
       lastOrderNumber = null;
       checkoutStep = 'cart';

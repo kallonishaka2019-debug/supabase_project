@@ -19,7 +19,7 @@ create table if not exists public.orders (
   customer_phone text not null,
   delivery_method text not null check (delivery_method in ('pickup', 'delivery')),
   delivery_address text,
-  payment_method text not null check (payment_method in ('monime', 'cash')),
+  payment_method text not null check (payment_method in ('monime', 'cash', 'orange_money', 'afrimoney')),
   payment_plan text not null check (payment_plan in ('full', 'deposit', 'pickup')),
   payment_due integer not null check (payment_due >= 0),
   total integer not null check (total >= 0),

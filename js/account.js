@@ -11,8 +11,8 @@ const PAYMENT_PLANS = {
 };
 
 const PAYMENT_METHODS = {
-  monime: 'Monime',
-  cash: 'Cash on pickup'
+  orange_money: 'Orange Money',
+  afrimoney: 'Afrimoney'
 };
 
 window.customer = {
@@ -22,7 +22,7 @@ window.customer = {
   delivery: 'pickup',
   deliveryTier: 'standard',
   paymentPlan: 'full',
-  paymentMethod: 'monime',
+  paymentMethod: 'orange_money',
   note: ''
 };
 
@@ -233,5 +233,5 @@ function paymentDue() {
 }
 
 function paymentMethodLabel() {
-  return PAYMENT_METHODS[window.customer.paymentMethod] || 'Monime';
+  return PAYMENT_METHODS[window.customer.paymentMethod] || 'Orange Money';
 }
