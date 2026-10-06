@@ -245,10 +245,6 @@ function detailsStepHtml() {
         <label for="fAddress">Delivery address *</label>
         <textarea id="fAddress" placeholder="Street, area, landmark">${window.customer?.address || ''}</textarea>
       </div>
-      <div class="field">
-        <label for="fNote">Note (optional)</label>
-        <textarea id="fNote" placeholder="Anything else — e.g. name/number to print">${window.customer?.note || ''}</textarea>
-      </div>
     </div>
     <div class="drawer-foot">
       <div class="total-row"><span>Total</span><span class="display">${CURRENCY} ${grandTotal()}</span></div>
