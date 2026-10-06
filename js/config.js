@@ -27,8 +27,7 @@ window.APP_CONFIG = {
   },
   delivery: {
     pickup: { cost: 0, estimatedDays: 'Same day - 2 days' },
-    standard: { cost: 50, estimatedDays: '2-3 days' },
-    express: { cost: 100, estimatedDays: 'Next day' }
+    standard: { cost: 50, estimatedDays: 'Within 24 hours' }
   }
 };
 

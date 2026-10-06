@@ -301,7 +301,7 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
 
   const subtotal = normalizedItems.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const selectedDelivery = String(deliveryMethod || "pickup");
-  const deliveryCost = { pickup: 0, standard: 50, express: 100 }[selectedDelivery];
+  const deliveryCost = { pickup: 0, standard: 50 }[selectedDelivery];
   if (deliveryCost === undefined) {
     return response.status(400).json({ error: "Invalid delivery method" });
   }
