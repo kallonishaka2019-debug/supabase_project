@@ -62,6 +62,12 @@ header {
 .logo .display {
   font-size: 22px;
 }
+.logo .logo-mark {
+  height: 36px;
+  width: auto;
+  border-radius: 6px;
+  margin-right: 4px;
+}
 .logo .tag {
   color: var(--pitch);
   font-size: 11px;
