@@ -11,10 +11,11 @@ require("dotenv").config();
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const appBaseUrl = String(process.env.APP_BASE_URL || `http://localhost:${port}`).replace(/\/$/, '');
-const monimeApiKey = String(process.env.MONIME_API_KEY || '').trim();
-const monimeSecretKey = String(process.env.MONIME_SECRET_KEY || '').trim();
-const monimeBaseUrl = String(process.env.MONIME_BASE_URL || '').trim().replace(/\/$/, '');
-const monimeWebhookSecret = String(process.env.MONIME_WEBHOOK_SECRET || '').trim();
+const monimeAccessToken = String(process.env.MONIME_ACCESS_TOKEN || '').trim();
+const monimeSpaceId = String(process.env.MONIME_SPACE_ID || '').trim();
+const monimeBaseUrl = "https://api.monime.io";
+const monimeVersion = "caph.2025-08-23";
+const customJerseyPrice = 400;
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
@@ -95,6 +96,88 @@ async function readCatalogProducts() {
 console.log(`JerseyHub Server Running at http://localhost:${port}`);
 
 app.use(cors({ origin: true, credentials: true }));
+
+// Monime signs the exact raw body, so this route must be registered before express.json().
+app.post("/api/webhooks/monime", express.raw({ type: "*/*", limit: "100kb" }), async (request, response) => {
+  const secret = String(process.env.MONIME_WEBHOOK_SECRET || "").trim();
+  if (!secret || !supabaseAdmin || !monimeAccessToken || !monimeSpaceId) {
+    console.error("Monime webhook received but the server is not fully configured.");
+    return response.status(500).json({ error: "Webhook not configured" });
+  }
+
+  const rawBody = Buffer.isBuffer(request.body) ? request.body : Buffer.alloc(0);
+  const header = String(request.get("monime-signature") || "");
+  let timestamp = null;
+  let signature = null;
+  for (const part of header.split(",")) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith("t=")) timestamp = Number(trimmed.slice(2));
+    if (trimmed.startsWith("v1=")) signature = trimmed.slice(3).trim();
+  }
+  if (!Number.isFinite(timestamp) || !signature) {
+    return response.status(401).json({ error: "Invalid signature" });
+  }
+  if (Math.abs(Math.floor(Date.now() / 1000) - timestamp) > 300) {
+    return response.status(401).json({ error: "Timestamp expired" });
+  }
+
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(`${timestamp}_${rawBody.toString("utf8")}`)
+    .digest("base64");
+  const expectedBuffer = Buffer.from(expected);
+  const signatureBuffer = Buffer.from(signature);
+  if (expectedBuffer.length !== signatureBuffer.length || !crypto.timingSafeEqual(expectedBuffer, signatureBuffer)) {
+    return response.status(401).json({ error: "Invalid signature" });
+  }
+
+  let event;
+  try {
+    event = JSON.parse(rawBody.toString("utf8"));
+  } catch {
+    return response.status(400).json({ error: "Invalid JSON" });
+  }
+
+  // Only a completed checkout changes an order; cancelled/expired sessions leave it pending so the customer can retry.
+  if (event?.event?.name !== "checkout_session.completed") {
+    return response.status(200).json({ received: true });
+  }
+
+  try {
+    const sessionId = String(event?.object?.id || event?.data?.id || "");
+    if (!sessionId) return response.status(200).json({ received: true });
+
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from("orders")
+      .select("id, status, payment_method, monime_session_id")
+      .eq("monime_session_id", sessionId)
+      .maybeSingle();
+    if (orderError) throw orderError;
+    if (!order || order.payment_method !== "monime") {
+      return response.status(200).json({ received: true });
+    }
+
+    // Never trust the payload alone: confirm the status with Monime directly.
+    const session = await fetchMonimeCheckoutSession(sessionId);
+    if (String(session?.reference || "") !== String(order.id)
+      || String(session?.status || "").toLowerCase() !== "completed") {
+      console.error("Monime webhook did not match order:", order.id);
+      return response.status(200).json({ received: true });
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("orders")
+      .update({ status: "confirmed" })
+      .eq("id", order.id)
+      .eq("status", "pending");
+    if (updateError) throw updateError;
+    return response.status(200).json({ received: true });
+  } catch (error) {
+    console.error("Monime webhook processing failed:", error.message);
+    return response.status(500).json({ error: "Processing failed" });
+  }
+});
+
 app.use(express.json({ limit: "100kb" }));
 app.use(cookieParser());
 
@@ -107,19 +190,26 @@ const { ensureSupabase, requireAuth, requireAdmin } = registerAuthRoutes(app, {
   nodeEnv: process.env.NODE_ENV,
 });
 
-function getMonimeCheckoutUrl(data = {}) {
-  return String(
-    data?.checkoutUrl ||
-    data?.checkout_url ||
-    data?.url ||
-    data?.redirectUrl ||
-    data?.redirect_url ||
-    data?.paymentUrl ||
-    data?.payment_url ||
-    data?.data?.checkoutUrl ||
-    data?.data?.url ||
-    ""
-  ).trim();
+function getMonimeResult(data = {}) {
+  return data?.result || data?.data || data;
+}
+
+async function fetchMonimeCheckoutSession(sessionId) {
+  const monimeResponse = await fetch(
+    `${monimeBaseUrl}/v1/checkout-sessions/${encodeURIComponent(sessionId)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${monimeAccessToken}`,
+        "Monime-Space-Id": monimeSpaceId,
+        "Monime-Version": monimeVersion,
+      },
+    },
+  );
+  const data = await monimeResponse.json().catch(() => ({}));
+  if (!monimeResponse.ok) {
+    throw new Error(data?.message || data?.error || "Monime could not verify the checkout session.");
+  }
+  return getMonimeResult(data);
 }
 
 app.get("/api/products", async (request, response) => {
@@ -157,122 +247,203 @@ app.delete("/api/admin/products/:id", requireAdmin, async (request, response) =>
 });
 
 app.post("/api/payments/create", async (request, response) => {
-  const { orderId, amount, email, name } = request.body || {};
+  const orderId = Number(request.body?.orderId);
 
-  if (!monimeApiKey || !monimeSecretKey || !monimeBaseUrl) {
+  if (!monimeAccessToken || !monimeSpaceId) {
     return response.status(501).json({
-      error: "Monime is not configured yet. Set MONIME_API_KEY, MONIME_SECRET_KEY, and MONIME_BASE_URL in the server environment.",
+      error: "Monime is not configured. Add MONIME_ACCESS_TOKEN and MONIME_SPACE_ID to the server environment.",
     });
   }
 
-  if (!orderId || !Number.isFinite(Number(amount)) || !email || !name) {
-    return response.status(400).json({ error: "orderId, amount, email and name are required for Monime checkout." });
+  if (!Number.isSafeInteger(orderId) || orderId < 1) {
+    return response.status(400).json({ error: "A valid orderId is required for Monime checkout." });
+  }
+  if (!supabaseAdmin) {
+    return response.status(503).json({ error: "Order storage is not configured." });
   }
 
   try {
-    const paymentPayload = {
-      amount: Number(amount),
-      currency: "SLL",
-      email,
-      name,
-      merchantReference: String(orderId),
-      callbackUrl: `${appBaseUrl}/api/payments/callback`,
-      redirectUrl: `${appBaseUrl}/jersey.html?payment=success`,
-    };
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from("orders")
+      .select("id, status, payment_method, payment_due, monime_session_id")
+      .eq("id", orderId)
+      .maybeSingle();
 
-    const monimeResponse = await fetch(`${monimeBaseUrl}/api/payments/checkout`, {
+    if (orderError) {
+      console.error("Failed to load order for Monime checkout:", orderError.message);
+      return response.status(500).json({ error: "Could not load the order for payment." });
+    }
+    if (!order) return response.status(404).json({ error: "Order not found." });
+    if (order.payment_method !== "monime") {
+      return response.status(400).json({ error: "This order is not set up for Monime payment." });
+    }
+    if (order.status !== "pending") {
+      return response.status(409).json({ error: "This order is no longer awaiting payment." });
+    }
+    if (!Number.isSafeInteger(Number(order.payment_due)) || Number(order.payment_due) <= 0) {
+      return response.status(400).json({ error: "This order has no amount due for online payment." });
+    }
+
+    if (order.monime_session_id) {
+      const existingSession = await fetchMonimeCheckoutSession(order.monime_session_id);
+      if (String(existingSession?.reference || "") !== String(order.id)) {
+        return response.status(502).json({ error: "The saved Monime session does not match this order." });
+      }
+      if (String(existingSession?.status || "").toLowerCase() === "completed") {
+        const { error: updateError } = await supabaseAdmin
+          .from("orders")
+          .update({ status: "confirmed" })
+          .eq("id", order.id)
+          .eq("status", "pending");
+        if (updateError) throw updateError;
+        return response.status(409).json({ error: "This order has already been paid." });
+      }
+      if (String(existingSession?.status || "").toLowerCase() === "pending") {
+        let existingCheckoutUrl;
+        try {
+          existingCheckoutUrl = new URL(existingSession.redirectUrl);
+        } catch {
+          existingCheckoutUrl = null;
+        }
+        if (!existingCheckoutUrl || existingCheckoutUrl.protocol !== "https:") {
+          return response.status(502).json({ error: "Monime returned an invalid checkout session." });
+        }
+        return response.json({
+          success: true,
+          provider: "monime",
+          checkoutUrl: existingCheckoutUrl.toString(),
+          reference: String(order.id),
+        });
+      }
+    }
+
+    const successUrl = new URL("/api/payments/return", appBaseUrl);
+    successUrl.searchParams.set("orderId", String(order.id));
+    successUrl.searchParams.set("outcome", "success");
+    const cancelUrl = new URL(successUrl);
+    cancelUrl.searchParams.set("outcome", "cancelled");
+
+    const monimeResponse = await fetch(`${monimeBaseUrl}/v1/checkout-sessions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${monimeApiKey}`,
-        "X-API-Key": monimeApiKey,
+        Authorization: `Bearer ${monimeAccessToken}`,
+        "Monime-Space-Id": monimeSpaceId,
+        "Monime-Version": monimeVersion,
+        "Idempotency-Key": crypto.randomUUID(),
       },
-      body: JSON.stringify(paymentPayload),
+      body: JSON.stringify({
+        name: `JerseyHub order #${order.id}`,
+        description: `Payment for JerseyHub order #${order.id}`,
+        reference: String(order.id),
+        successUrl: successUrl.toString(),
+        cancelUrl: cancelUrl.toString(),
+        lineItems: [{
+          type: "custom",
+          name: `JerseyHub order #${order.id}`,
+          price: { currency: "SLE", value: Number(order.payment_due) * 100 },
+          quantity: 1,
+          reference: String(order.id),
+        }],
+      }),
     });
 
     const data = await monimeResponse.json().catch(() => ({}));
     if (!monimeResponse.ok) {
       return response.status(502).json({
-        error: data?.message || "The Monime payment session could not be created.",
+        error: data?.message || data?.error || "The Monime payment session could not be created.",
       });
     }
 
-    const checkoutUrl = getMonimeCheckoutUrl(data);
+    const session = getMonimeResult(data);
+    const checkoutUrl = String(session?.redirectUrl || "").trim();
+    const sessionId = String(session?.id || "").trim();
+    let parsedCheckoutUrl;
+    try {
+      parsedCheckoutUrl = new URL(checkoutUrl);
+    } catch {
+      parsedCheckoutUrl = null;
+    }
+    if (!sessionId || !parsedCheckoutUrl || parsedCheckoutUrl.protocol !== "https:") {
+      console.error("Monime returned an invalid checkout session response.");
+      return response.status(502).json({ error: "Monime returned an invalid checkout session." });
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("orders")
+      .update({ monime_session_id: sessionId })
+      .eq("id", order.id)
+      .eq("status", "pending");
+    if (updateError) {
+      console.error("Failed to save Monime session for order:", updateError.message);
+      return response.status(500).json({ error: "Could not save the Monime payment session." });
+    }
+
     return response.json({
       success: true,
       provider: "monime",
       checkoutUrl,
-      reference: data.reference || data.transactionId || String(orderId),
+      reference: session.reference || String(order.id),
     });
   } catch (error) {
     console.error("Monime checkout failed:", error);
     return response.status(500).json({
-      error: "Monime checkout failed. Check your API URL, keys, and callback configuration.",
+      error: "Monime checkout failed. Check the Monime credentials and try again.",
     });
   }
 });
 
-app.post("/api/payments/callback", express.raw({ type: "application/json" }), async (request, response) => {
-  const rawBody = Buffer.isBuffer(request.body) ? request.body : Buffer.from(JSON.stringify(request.body || {}));
-  let payload = {};
+app.get("/api/payments/return", async (request, response) => {
+  const orderId = Number(request.query.orderId);
+  const outcome = request.query.outcome === "cancelled" ? "cancelled" : "success";
+  const resultUrl = new URL("/jersey.html", appBaseUrl);
+  resultUrl.searchParams.set("payment", "pending");
+  if (Number.isSafeInteger(orderId) && orderId > 0) {
+    resultUrl.searchParams.set("orderId", String(orderId));
+  }
+
+  if (!Number.isSafeInteger(orderId) || orderId < 1 || !supabaseAdmin || !monimeAccessToken || !monimeSpaceId) {
+    return response.redirect(303, resultUrl.toString());
+  }
 
   try {
-    const jsonText = rawBody.toString("utf8").trim();
-    if (jsonText) payload = JSON.parse(jsonText);
-  } catch (error) {
-    console.warn("Monime callback payload was not valid JSON:", error.message);
-    payload = {};
-  }
-
-  const incomingSignature = request.headers["x-monime-signature"] || request.headers["x-signature"] || request.headers["monime-signature"];
-
-  if (monimeWebhookSecret && incomingSignature) {
-    const expectedSignature = crypto.createHmac("sha256", monimeWebhookSecret).update(rawBody).digest("hex");
-    const normalizedSignature = String(incomingSignature).trim();
-    const valid = normalizedSignature === expectedSignature || normalizedSignature === `sha256=${expectedSignature}`;
-
-    if (!valid) {
-      console.warn("Monime webhook signature mismatch. Expected a SHA-256 HMAC using MONIME_WEBHOOK_SECRET.");
-      return response.status(401).json({ success: false, error: "Invalid signature" });
-    }
-  }
-
-  const paymentStatus = String(
-    payload?.status ||
-    payload?.state ||
-    payload?.paymentStatus ||
-    payload?.transactionStatus ||
-    payload?.data?.status ||
-    payload?.data?.state ||
-    payload?.data?.paymentStatus ||
-    ""
-  ).toLowerCase();
-
-  const merchantReference = String(
-    payload?.merchantReference ||
-    payload?.merchant_reference ||
-    payload?.reference ||
-    payload?.transactionReference ||
-    payload?.data?.reference ||
-    payload?.data?.merchantReference ||
-    payload?.data?.merchant_reference ||
-    ""
-  ).trim();
-
-  if (merchantReference && /^\d+$/.test(merchantReference) && supabaseAdmin) {
-    const nextStatus = /success|paid|completed|settled/.test(paymentStatus) ? "confirmed" : "pending";
-    const { error } = await supabaseAdmin
+    const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .update({ status: nextStatus })
-      .eq("id", Number(merchantReference));
+      .select("id, status, payment_method, monime_session_id")
+      .eq("id", orderId)
+      .maybeSingle();
 
-    if (error) {
-      console.warn("Failed to update order payment status:", error.message);
+    if (orderError) throw orderError;
+    if (!order || order.payment_method !== "monime" || !order.monime_session_id) {
+      return response.redirect(303, resultUrl.toString());
     }
+    if (order.status === "confirmed") {
+      resultUrl.searchParams.set("payment", "success");
+      return response.redirect(303, resultUrl.toString());
+    }
+
+    const session = await fetchMonimeCheckoutSession(order.monime_session_id);
+    if (String(session?.reference || "") !== String(order.id)) {
+      console.error("Monime session reference did not match order:", order.id);
+      return response.redirect(303, resultUrl.toString());
+    }
+
+    if (String(session?.status || "").toLowerCase() === "completed") {
+      const { error: updateError } = await supabaseAdmin
+        .from("orders")
+        .update({ status: "confirmed" })
+        .eq("id", order.id)
+        .eq("status", "pending");
+      if (updateError) throw updateError;
+      resultUrl.searchParams.set("payment", "success");
+    } else if (outcome === "cancelled") {
+      resultUrl.searchParams.set("payment", "cancelled");
+    }
+  } catch (error) {
+    console.error("Could not verify Monime checkout return:", error.message);
   }
 
-  console.log("Monime callback received:", payload);
-  response.status(200).json({ success: true, received: true });
+  return response.redirect(303, resultUrl.toString());
 });
 
 app.post("/api/orders", ensureSupabase, async (request, response) => {
@@ -280,22 +451,37 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
   if (!Array.isArray(items) || items.length === 0) {
     return response.status(400).json({ error: "At least one item is required" });
   }
+  const selectedPaymentMethod = String(paymentMethod || "monime");
+  if (!["monime", "cash", "orange_money", "afrimoney"].includes(selectedPaymentMethod)) {
+    return response.status(400).json({ error: "Invalid payment method" });
+  }
 
-  const normalizedItems = items.map((item) => ({
-    productId: item.productId ?? item.product_id,
-    club: String(item.club || ""),
-    kit: String(item.kit || ""),
-    size: String(item.size || ""),
-    quantity: Number(item.quantity),
-    unitPrice: Number(item.unitPrice ?? item.unit_price),
-    custom: Boolean(item.custom),
-    customName: item.customName || item.custom_name || null,
-    customNumber: item.customNumber || item.custom_number || null,
-  }));
+  const catalog = await readCatalogProducts();
+  const normalizedItems = items.map((item) => {
+    const custom = Boolean(item.custom);
+    const productId = item.productId ?? item.product_id;
+    const product = custom
+      ? null
+      : catalog.find((candidate) => String(candidate.id) === String(productId));
+    return {
+      productId: custom ? null : product?.id ?? productId,
+      club: custom ? String(item.club || "") : String(product?.club || ""),
+      kit: custom ? String(item.kit || "") : String(product?.kit || ""),
+      size: String(item.size || ""),
+      quantity: Number(item.quantity),
+      unitPrice: custom ? customJerseyPrice : Number(product?.price),
+      custom,
+      customName: custom ? String(item.customName || item.custom_name || "") : null,
+      customNumber: custom ? item.customNumber ?? item.custom_number ?? null : null,
+    };
+  });
   const invalidItem = normalizedItems.some(
     (item) => !["M", "L", "XL", "XXL"].includes(item.size) ||
       !Number.isInteger(item.quantity) || item.quantity < 1 ||
-      !Number.isFinite(item.unitPrice) || item.unitPrice < 0,
+      !Number.isSafeInteger(item.unitPrice) || item.unitPrice < 0 ||
+      item.club.length < 2 || item.kit.length < 2 ||
+      (!item.custom && !catalog.some((product) => String(product.id) === String(item.productId))) ||
+      (item.custom && item.customName.length > 12),
   );
   if (invalidItem) return response.status(400).json({ error: "Order contains invalid items" });
 
@@ -331,7 +517,7 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
       total,
       delivery_method: selectedDelivery === "pickup" ? "pickup" : "delivery",
       delivery_address: String(finalDeliveryAddress || ""),
-      payment_method: String(paymentMethod || "monime"),
+      payment_method: selectedPaymentMethod,
       payment_plan: String(paymentPlan || "full"),
       payment_due: paymentDueAmount,
       note: String(note),
