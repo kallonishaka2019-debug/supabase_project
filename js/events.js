@@ -1,3 +1,9 @@
+let pendingMonimeOrderId = null;
+
+function invalidatePendingMonimeOrder() {
+  pendingMonimeOrderId = null;
+}
+
 function bindDrawerEvents() {
   const closeBtn = document.getElementById('closeBtn');
   if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
@@ -107,6 +113,7 @@ function bindDrawerEvents() {
       if (!validateCheckoutForm()) return;
       checkoutStep = 'confirm';
       lastOrderNumber = null;
+      invalidatePendingMonimeOrder();
       renderDrawer();
     });
   }
@@ -123,9 +130,10 @@ function bindDrawerEvents() {
       window.customer = {
         name: '', phone: '', address: '',
         delivery: 'pickup', deliveryTier: 'standard', paymentPlan: 'full',
-        paymentMethod: 'orange_money', note: ''
+        paymentMethod: 'monime', note: ''
       };
       lastOrderNumber = null;
+      invalidatePendingMonimeOrder();
       checkoutStep = 'cart';
       closeDrawer();
     });
@@ -137,6 +145,7 @@ function bindFormEvents() {
   if (fName) {
     fName.addEventListener('input', (e) => {
       window.customer.name = e.target.value;
+      invalidatePendingMonimeOrder();
       clearFieldError('fName');
     });
   }
@@ -145,6 +154,7 @@ function bindFormEvents() {
   if (fPhone) {
     fPhone.addEventListener('input', (e) => {
       window.customer.phone = e.target.value;
+      invalidatePendingMonimeOrder();
       clearFieldError('fPhone');
     });
   }
@@ -153,6 +163,7 @@ function bindFormEvents() {
   if (fAddress) {
     fAddress.addEventListener('input', (e) => {
       window.customer.address = e.target.value;
+      invalidatePendingMonimeOrder();
       clearFieldError('fAddress');
     });
   }
@@ -176,6 +187,7 @@ function bindFormEvents() {
   document.querySelectorAll('input[name="deliveryType"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
       window.customer.delivery = e.target.value;
+      invalidatePendingMonimeOrder();
       renderDrawer();
     });
   });
@@ -184,6 +196,7 @@ function bindFormEvents() {
   if (fDeliveryTier) {
     fDeliveryTier.addEventListener('change', (e) => {
       window.customer.deliveryTier = e.target.value;
+      invalidatePendingMonimeOrder();
       renderDrawer();
     });
   }
@@ -191,6 +204,7 @@ function bindFormEvents() {
   document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
       window.customer.paymentMethod = e.target.value;
+      if (e.target.value !== 'monime') invalidatePendingMonimeOrder();
       renderDrawer();
     });
   });
@@ -284,20 +298,12 @@ async function handleLogout() {
   showInfo('Logged out successfully');
 }
 
-async function createMonimeCheckoutSession(orderId = null) {
-  const total = Math.max(0, Math.round(grandTotal()));
-  const payload = {
-    orderId: orderId ?? `jerseyhub-${Date.now()}`,
-    amount: total,
-    email: (currentAccount?.email || window.customer?.email || 'customer@example.com').trim(),
-    name: (window.customer?.name || currentAccount?.name || 'Customer').trim(),
-  };
-
+async function createMonimeCheckoutSession(orderId) {
   const response = await fetch(`${API_BASE}/payments/create`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify(payload)
+    body: JSON.stringify({ orderId })
   });
 
   const data = await response.json().catch(() => ({}));
@@ -318,17 +324,19 @@ async function handlePlaceOrder() {
   
   try {
     if (window.customer.paymentMethod === 'monime') {
-      const savedOrder = await saveCheckoutOrder();
-      const orderId = savedOrder?.order?.id ?? savedOrder?.id ?? null;
-      lastOrderNumber = Number(orderId) || null;
       try {
-        const monimeCheckout = await createMonimeCheckoutSession(orderId);
+        if (!pendingMonimeOrderId) {
+          const savedOrder = await saveCheckoutOrder();
+          const orderId = Number(savedOrder?.order?.id ?? savedOrder?.id);
+          if (!Number.isSafeInteger(orderId) || orderId < 1) {
+            throw new Error('The order was saved, but its ID was not returned.');
+          }
+          pendingMonimeOrderId = orderId;
+        }
+        const monimeCheckout = await createMonimeCheckoutSession(pendingMonimeOrderId);
         const checkoutUrl = monimeCheckout.checkoutUrl || monimeCheckout.url || monimeCheckout.redirectUrl || monimeCheckout.data?.checkoutUrl;
         if (checkoutUrl) {
-          window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
-          showSuccess('Monime checkout opened. Complete the payment to finish your order.');
-          placeOrderBtn.disabled = false;
-          placeOrderBtn.textContent = 'Make payment';
+          window.location.assign(checkoutUrl);
           return;
         }
         throw new Error('Monime checkout URL was not returned by the payment provider.');
@@ -340,6 +348,7 @@ async function handlePlaceOrder() {
       }
     }
 
+    invalidatePendingMonimeOrder();
     const savedOrder = await saveCheckoutOrder();
     lastOrderNumber = Number(savedOrder?.order?.id ?? savedOrder?.id ?? Math.floor(1000 + Math.random() * 9000));
     renderDrawer();

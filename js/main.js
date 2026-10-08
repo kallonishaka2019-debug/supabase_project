@@ -31,10 +31,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const paymentParam = new URLSearchParams(window.location.search).get('payment');
   if (paymentParam) {
-    const paymentMessage = paymentParam === 'success'
-      ? 'Payment received! Your order has been confirmed.'
-      : 'Payment was not completed. Please retry or contact support.';
-    showSuccess(paymentMessage);
+    if (paymentParam === 'success') {
+      clearCart();
+      showSuccess('Payment confirmed! Your order has been placed.');
+    } else if (paymentParam === 'cancelled') {
+      showInfo('Payment was cancelled. Your order is still pending.');
+    } else {
+      showInfo('Payment is not confirmed yet. Please check again shortly.');
+    }
     window.history.replaceState({}, '', window.location.pathname);
   }
 });

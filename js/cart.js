@@ -48,6 +48,7 @@ function persistWishlist() {
 }
 
 function addToCart(productId, size) {
+  invalidatePendingMonimeOrder();
   const product = PRODUCTS.find(candidate => candidate.id === productId);
   const existing = cart.find(i => i.productId === productId && i.size === size);
   if (existing) {
@@ -61,6 +62,7 @@ function addToCart(productId, size) {
 }
 
 function addCustomJerseyToCart(config) {
+  invalidatePendingMonimeOrder();
   const customItem = {
     productId: `custom-${Date.now()}`,
     size: config.size,
@@ -85,6 +87,7 @@ function addCustomJerseyToCart(config) {
 }
 
 function updateQty(productId, size, delta) {
+  invalidatePendingMonimeOrder();
   const normalizedId = normalizeCartProductId(productId);
   const item = cart.find(i => i.productId === normalizedId && i.size === size);
   if (!item) return;
@@ -98,6 +101,7 @@ function updateQty(productId, size, delta) {
 }
 
 function removeItem(productId, size) {
+  invalidatePendingMonimeOrder();
   const normalizedId = normalizeCartProductId(productId);
   cart = cart.filter(i => !(i.productId === normalizedId && i.size === size));
   persistCart();
@@ -163,6 +167,7 @@ function getCartProduct(item) {
 }
 
 function clearCart() {
+  invalidatePendingMonimeOrder();
   cart = [];
   persistCart();
   updateCartCount();

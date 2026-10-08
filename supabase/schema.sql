@@ -23,6 +23,7 @@ create table if not exists public.orders (
   payment_plan text not null check (payment_plan in ('full', 'deposit', 'pickup')),
   payment_due integer not null check (payment_due >= 0),
   total integer not null check (total >= 0),
+  monime_session_id text,
   note text,
   status text not null default 'pending' check (status in ('pending', 'confirmed', 'fulfilled', 'cancelled')),
   items jsonb not null check (jsonb_typeof(items) = 'array'),

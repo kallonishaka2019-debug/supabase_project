@@ -20,10 +20,13 @@ npx vercel
 - `SUPABASE_URL`: https://YOUR-PROJECT-REF.supabase.co
 - `SUPABASE_PUBLISHABLE_KEY`: Your Supabase publishable key
 - `SUPABASE_SECRET_KEY`: Your Supabase secret key (never commit this)
-- `MONIME_SECRET_KEY`: Your Monime secret key
-- `MONIME_WEBHOOK_SECRET`: Secret used to verify Monime callbacks
-- `MONIME_BASE_URL`: The actual Monime API base URL
+- `MONIME_ACCESS_TOKEN`: Your server-side Monime access token
+- `MONIME_SPACE_ID`: Your Monime Space ID (starts with `spc-`)
 - `APP_BASE_URL`: Your deployed HTTPS URL, such as `https://your-project.vercel.app`
+
+Keep the Monime access token in Vercel's server environment; never add it to browser code or commit it. Run `supabase/migrate_monime_checkout.sql` in the Supabase SQL Editor if the `orders` table already exists (new databases receive this column from `supabase/schema.sql`).
+
+At checkout, customers are sent in the same tab to Monime's secure hosted payment page, then returned to JerseyHub. The server checks the Monime session before confirming the order.
 
 ---
 
@@ -52,10 +55,8 @@ Add these in Railway dashboard:
 - `SUPABASE_URL`: https://YOUR-PROJECT-REF.supabase.co
 - `SUPABASE_PUBLISHABLE_KEY`: Your Supabase publishable key
 - `SUPABASE_SECRET_KEY`: Your Supabase secret key (never commit this)
-- `MONIME_API_KEY`: Your Monime API key
-- `MONIME_SECRET_KEY`: Your Monime secret key
-- `MONIME_WEBHOOK_SECRET`: Secret used to verify Monime callbacks
-- `MONIME_BASE_URL`: The actual Monime API base URL
+- `MONIME_ACCESS_TOKEN`: Your server-side Monime access token
+- `MONIME_SPACE_ID`: Your Monime Space ID
 - `APP_BASE_URL`: Your deployed HTTPS URL
 
 ---
