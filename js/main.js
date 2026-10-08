@@ -5,17 +5,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupPagination();
   setupSizeGuide();
 
-  await loadProductsFromApi();
-  
+  // Show the bundled catalog immediately; the API result (slow on a cold start) only refreshes it.
   renderGrid();
   updateResultsCount();
   updatePagination();
-  
-  await initializeCustomizer();
-  
   updateCartCount();
   updateAccountButton();
-  await restoreServerSession();
+
+  const sessionRestore = restoreServerSession();
+  await loadProductsFromApi();
+
+  renderGrid();
+  updateResultsCount();
+  updatePagination();
+
+  await initializeCustomizer();
+  await sessionRestore;
 
   const verifiedParam = new URLSearchParams(window.location.search).get('verified');
   if (verifiedParam) {
