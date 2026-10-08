@@ -26,6 +26,5 @@ npm-debug.log*
 .railway/
 .DS_Store
 .vscode/
-customJersey/*.png
 ./images/
 .vercel
