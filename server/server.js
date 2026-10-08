@@ -90,7 +90,13 @@ async function readCatalogProducts() {
   await productSeedPromise;
   if (!supabaseAdmin) return products;
   const { data, error } = await supabaseAdmin.from("products").select("*").order("id");
-  return error || !data ? products : data;
+  return error || !data ? products : data.map(useWebpImages);
+}
+
+// Catalog rows saved before the WebP conversion still point at .png files that no longer exist.
+function useWebpImages(product) {
+  const toWebp = (value) => (typeof value === "string" ? value.replace(/^(customJersey\/.+)\.png$/, "$1.webp") : value);
+  return { ...product, image: toWebp(product.image), back_image: toWebp(product.back_image) };
 }
 
 console.log(`JerseyHub Server Running at http://localhost:${port}`);
