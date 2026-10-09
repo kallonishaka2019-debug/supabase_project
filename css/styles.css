@@ -110,8 +110,13 @@ nav a {
   color: var(--paper);
 }
 .hero h1 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-style: italic;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: -0.01em;
   font-size: clamp(40px, 6vw, 68px);
-  line-height: 0.98;
+  line-height: 1.05;
   margin: 16px 0 22px;
 }
 .hero p {
