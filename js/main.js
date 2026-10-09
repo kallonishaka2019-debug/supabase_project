@@ -38,7 +38,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (paymentParam === 'cancelled') {
       showInfo('Payment was cancelled. Your order is still pending.');
     } else {
-      showInfo('Payment is not confirmed yet. Please check again shortly.');
+      // The shopper completed Monime's flow and the order is saved; confirmation may just be delayed.
+      clearCart();
+      showInfo('Thank you! Your order is placed. Payment confirmation may take a moment.');
     }
     window.history.replaceState({}, '', window.location.pathname);
   }
