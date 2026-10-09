@@ -585,6 +585,14 @@ app.patch("/api/admin/orders/:id", ensureSupabase, requireAdmin, async (request,
   response.json({ success: true });
 });
 
+app.delete("/api/admin/orders/:id", ensureSupabase, requireAdmin, async (request, response) => {
+  const orderId = Number(request.params.id);
+  if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
+  const { error } = await supabaseAdmin.from("orders").delete().eq("id", orderId);
+  if (error) return response.status(500).json({ error: "Failed to delete order" });
+  response.status(204).end();
+});
+
 app.get("/api/admin/stats", ensureSupabase, requireAdmin, async (request, response) => {
   const { count: totalOrders } = await supabaseAdmin.from("orders").select("*", { count: "exact", head: true });
   const { count: pendingOrders } = await supabaseAdmin

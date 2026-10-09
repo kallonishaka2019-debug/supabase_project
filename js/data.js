@@ -1,52 +1,52 @@
 let PRODUCTS = [
-  { id: 1, club: "Barcelona", kit: "Home 2026/27", number: 10, price: 350, sale: null, color: "#A50044", stripe: "#004D98", textColor: "#FBE122", image: "customJersey/Barca.home.front.webp", backImage: "customJersey/Barca.home.back.webp" },
-  { id: 2, club: "Barcelona", kit: "Away 2026/27", number: 10, price: 350, sale: null, color: "#E8DCCB", stripe: "#A50044", textColor: "#FBE122", image: "customJersey/Barca.away.front.webp", backImage: "customJersey/Barca.away.back.webp" },
-  { id: 3, club: "Barcelona", kit: "Third 2026/27", number: 10, price: 350, sale: null, color: "#17131F", stripe: "#B99A55", textColor: "#FBE122", image: "customJersey/Barca.third.front.webp", backImage: "customJersey/Barca.third.back.webp" },
-  { id: 4, club: "Real Madrid", kit: "Home 2026/27", number: 9, price: 350, sale: null, color: "#FFFFFF", stripe: "#FEBE10", image: "customJersey/Madrid.home.front.webp", backImage: "customJersey/Madrid.home.back.webp" },
-  { id: 5, club: "Real Madrid", kit: "Away 2026/27", number: 9, price: 350, sale: null, color: "#1B2A49", stripe: "#FEBE10", image: "customJersey/Madrid.away.front.webp", backImage: "customJersey/Madrid.away.back.webp" },
-  { id: 6, club: "Real Madrid", kit: "Third 2026/27", number: 9, price: 350, sale: null, color: "#1B2A49", stripe: "#FEBE10", image: "customJersey/Madrid.third.front.webp", backImage: "customJersey/Madrid.third.back.webp" },
-  { id: 7, club: "Manchester United", kit: "Home 2026/27", number: 7, price: 350, sale: null, color: "#DA291C", stripe: "#FBE122", image: "customJersey/United.home.front.webp", backImage: "customJersey/United.home.back.webp" },
-  { id: 8, club: "Manchester United", kit: "Away 2026/27", number: 7, price: 350, sale: null, color: "#F2F2F2", stripe: "#DA291C", image: "customJersey/United.away.front.webp", backImage: "customJersey/United.away.back.webp" },
-  { id: 9, club: "Manchester United", kit: "Third 2026/27", number: 7, price: 350, sale: null, color: "#111111", stripe: "#DA291C", image: "customJersey/United.third.front.webp", backImage: "customJersey/United.third.back.webp" },
-  { id: 13, club: "Arsenal", kit: "Home 2026/27", number: 8, price: 350, sale: null, color: "#EF0107", stripe: "#FFFFFF", image: "customJersey/Arsenal.home.front.webp", backImage: "customJersey/Arsenal.home.back.webp" },
-  { id: 14, club: "Arsenal", kit: "Away 2026/27", number: 8, price: 350, sale: null, color: "#F2D49B", stripe: "#EF0107", image: "customJersey/Arsenal.away.front.webp", backImage: "customJersey/Arsenal.away.back.webp" },
-  { id: 15, club: "Arsenal", kit: "Third 2026/27", number: 8, price: 350, sale: null, color: "#111111", stripe: "#EF0107", image: "customJersey/Arsenal.third.front.webp", backImage: "customJersey/Arsenal.third.back.webp" },
-  { id: 10, club: "Liverpool", kit: "Home 2026/27", number: 11, price: 350, sale: null, color: "#C8102E", stripe: "#00A398", image: "customJersey/Liverpool.home.front.webp", backImage: "customJersey/Liverpool.home.front.webp" },
-  { id: 11, club: "Liverpool", kit: "Away 2026/27", available: false, number: 11, price: 350, sale: null, color: "#F2F2F2", stripe: "#C8102E", image: "customJersey/Liverpool.away.front.jpeg", backImage: "customJersey/liverpool.away.back.jpeg" },
-  { id: 12, club: "Liverpool", kit: "Third 2026/27", available: false, number: 11, price: 350, sale: null, color: "#111111", stripe: "#C8102E", image: "images/Liverpool.third.jpg", backImage: "images/Liverpool.third.jpg" },
-  { id: 16, club: "Chelsea", kit: "Home 2026/27", number: 17, price: 350, sale: null, color: "#034694", stripe: "#FFFFFF", image: "customJersey/Chelsea.home.front.webp", backImage: "customJersey/Chelsea.home.back.webp" },
-  { id: 17, club: "Chelsea", kit: "Away 2026/27", number: 17, price: 350, sale: null, color: "#F2F2F2", stripe: "#034694", image: "customJersey/Chelsea.away.front.webp", backImage: "customJersey/Chelsea.away.back.webp" },
-  { id: 18, club: "Chelsea", kit: "Third 2026/27", number: 17, price: 350, sale: null, color: "#111111", stripe: "#034694", image: "images/chelsea.third.webp", backImage: "images/chelsea.third.webp" },
-  { id: 19, club: "PSG", kit: "Home 2026/27", number: 30, price: 350, sale: null, color: "#04175C", stripe: "#DA291C", image: "customJersey/Paris.home.front.webp", backImage: "customJersey/Paris.home.front.webp" },
-  { id: 20, club: "PSG", kit: "Away 2026/27", number: 30, price: 350, sale: null, color: "#F2F2F2", stripe: "#04175C", image: "customJersey/Paris.away.front.webp", backImage: "customJersey/Paris.away.back.webp" },
+  { id: 1, club: "Barcelona", kit: "Home 2026/27", available: true, number: 10, price: 350, sale: null, color: "#A50044", stripe: "#004D98", textColor: "#FBE122", image: "customJersey/Barca.home.front.webp", backImage: "customJersey/Barca.home.back.webp" },
+  { id: 2, club: "Barcelona", kit: "Away 2026/27", available: true, number: 10, price: 350, sale: null, color: "#E8DCCB", stripe: "#A50044", textColor: "#FBE122", image: "customJersey/Barca.away.front.webp", backImage: "customJersey/Barca.away.back.webp" },
+  { id: 3, club: "Barcelona", kit: "Third 2026/27", available: true, number: 10, price: 350, sale: null, color: "#17131F", stripe: "#B99A55", textColor: "#FBE122", image: "customJersey/Barca.third.front.webp", backImage: "customJersey/Barca.third.back.webp" },
+  { id: 4, club: "Real Madrid", kit: "Home 2026/27", available: true, number: 9, price: 350, sale: null, color: "#FFFFFF", stripe: "#FEBE10", image: "customJersey/Madrid.home.front.webp", backImage: "customJersey/Madrid.home.back.webp" },
+  { id: 5, club: "Real Madrid", kit: "Away 2026/27", available: true, number: 9, price: 350, sale: null, color: "#1B2A49", stripe: "#FEBE10", image: "customJersey/Madrid.away.front.webp", backImage: "customJersey/Madrid.away.back.webp" },
+  { id: 6, club: "Real Madrid", kit: "Third 2026/27", available: true, number: 9, price: 350, sale: null, color: "#1B2A49", stripe: "#FEBE10", image: "customJersey/Madrid.third.front.webp", backImage: "customJersey/Madrid.third.back.webp" },
+  { id: 7, club: "Manchester United", kit: "Home 2026/27", available: true, number: 7, price: 350, sale: null, color: "#DA291C", stripe: "#FBE122", image: "customJersey/United.home.front.webp", backImage: "customJersey/United.home.back.webp" },
+  { id: 8, club: "Manchester United", kit: "Away 2026/27", available: true, number: 7, price: 350, sale: null, color: "#F2F2F2", stripe: "#DA291C", image: "customJersey/United.away.front.webp", backImage: "customJersey/United.away.back.webp" },
+  { id: 9, club: "Manchester United", kit: "Third 2026/27", available: true, number: 7, price: 350, sale: null, color: "#111111", stripe: "#DA291C", image: "customJersey/United.third.front.webp", backImage: "customJersey/United.third.back.webp" },
+  { id: 13, club: "Arsenal", kit: "Home 2026/27", available: true, number: 8, price: 350, sale: null, color: "#EF0107", stripe: "#FFFFFF", image: "customJersey/Arsenal.home.front.webp", backImage: "customJersey/Arsenal.home.back.webp" },
+  { id: 14, club: "Arsenal", kit: "Away 2026/27", available: true, number: 8, price: 350, sale: null, color: "#F2D49B", stripe: "#EF0107", image: "customJersey/Arsenal.away.front.webp", backImage: "customJersey/Arsenal.away.back.webp" },
+  { id: 15, club: "Arsenal", kit: "Third 2026/27", available: true, number: 8, price: 350, sale: null, color: "#111111", stripe: "#EF0107", image: "customJersey/Arsenal.third.front.webp", backImage: "customJersey/Arsenal.third.back.webp" },
+  { id: 10, club: "Liverpool", kit: "Home 2026/27", available: true, number: 11, price: 350, sale: null, color: "#C8102E", stripe: "#00A398", image: "customJersey/Liverpool.home.front.webp", backImage: "customJersey/Liverpool.home.front.webp" },
+  { id: 11, club: "Liverpool", kit: "Away 2026/27", available: true, number: 11, price: 350, sale: null, color: "#F2F2F2", stripe: "#C8102E", image: "customJersey/Liverpool.away.front.jpeg", backImage: "customJersey/liverpool.away.back.jpeg" },
+  { id: 12, club: "Liverpool", kit: "Third 2026/27", available: true, number: 11, price: 350, sale: null, color: "#111111", stripe: "#C8102E", image: "images/Liverpool.third.jpg", backImage: "images/Liverpool.third.jpg" },
+  { id: 16, club: "Chelsea", kit: "Home 2026/27", available: true, number: 17, price: 350, sale: null, color: "#034694", stripe: "#FFFFFF", image: "customJersey/Chelsea.home.front.webp", backImage: "customJersey/Chelsea.home.back.webp" },
+  { id: 17, club: "Chelsea", kit: "Away 2026/27", available: true, number: 17, price: 350, sale: null, color: "#F2F2F2", stripe: "#034694", image: "customJersey/Chelsea.away.front.webp", backImage: "customJersey/Chelsea.away.back.webp" },
+  { id: 18, club: "Chelsea", kit: "Third 2026/27", available: true, number: 17, price: 350, sale: null, color: "#111111", stripe: "#034694", image: "images/chelsea.third.webp", backImage: "images/chelsea.third.webp" },
+  { id: 19, club: "PSG", kit: "Home 2026/27", available: true, number: 30, price: 350, sale: null, color: "#04175C", stripe: "#DA291C", image: "customJersey/Paris.home.front.webp", backImage: "customJersey/Paris.home.front.webp" },
+  { id: 20, club: "PSG", kit: "Away 2026/27", available: true, number: 30, price: 350, sale: null, color: "#F2F2F2", stripe: "#04175C", image: "customJersey/Paris.away.front.webp", backImage: "customJersey/Paris.away.back.webp" },
   { id: 21, club: "PSG", kit: "Third 2026/27", available: false, number: 30, price: 350, sale: null, color: "#111111", stripe: "#DA291C", image: null, backImage: null },
-  { id: 22, club: "Bayern Munich", kit: "Home 2026/27", number: 25, price: 350, sale: null, color: "#DC052D", stripe: "#0066B2", image: "customJersey/Bayern.home.front.webp", backImage: "customJersey/Bayern.home.back.webp" },
-  { id: 23, club: "Bayern Munich", kit: "Away 2026/27", number: 25, price: 350, sale: null, color: "#111111", stripe: "#DC052D", image: "customJersey/Bayern.away.front.webp", backImage: "customJersey/Bayern.away.back.webp" },
-  { id: 24, club: "Bayern Munich", kit: "Third 2026/27", number: 25, price: 350, sale: null, color: "#F2F2F2", stripe: "#DC052D", image: "images/Bayern.third.webp", backImage: "images/Bayern.third.webp" },
-  { id: 25, club: "Manchester City", kit: "Home 2026/27", number: 9, price: 350, sale: null, color: "#6CABDD", stripe: "#FFFFFF", image: "customJersey/City.home.front.webp", backImage: "customJersey/City.home.back.webp" },
-  { id: 26, club: "Manchester City", kit: "Away 2026/27", number: 9, price: 350, sale: null, color: "#111111", stripe: "#6CABDD", image: "images/City.away.webp", backImage: "images/City.away.webp" },
+  { id: 22, club: "Bayern Munich", kit: "Home 2026/27", available: true, number: 25, price: 350, sale: null, color: "#DC052D", stripe: "#0066B2", image: "customJersey/Bayern.home.front.webp", backImage: "customJersey/Bayern.home.back.webp" },
+  { id: 23, club: "Bayern Munich", kit: "Away 2026/27", available: true, number: 25, price: 350, sale: null, color: "#111111", stripe: "#DC052D", image: "customJersey/Bayern.away.front.webp", backImage: "customJersey/Bayern.away.back.webp" },
+  { id: 24, club: "Bayern Munich", kit: "Third 2026/27", available: false, number: 25, price: 350, sale: null, color: "#F2F2F2", stripe: "#DC052D", image: "images/Bayern.third.webp", backImage: "images/Bayern.third.webp" },
+  { id: 25, club: "Manchester City", kit: "Home 2026/27", available: true, number: 9, price: 350, sale: null, color: "#6CABDD", stripe: "#FFFFFF", image: "customJersey/City.home.front.webp", backImage: "customJersey/City.home.back.webp" },
+  { id: 26, club: "Manchester City", kit: "Away 2026/27", available: true, number: 9, price: 350, sale: null, color: "#111111", stripe: "#6CABDD", image: "images/City.away.webp", backImage: "images/City.away.webp" },
   { id: 27, club: "Manchester City", kit: "Third 2026/27", available: false, number: 9, price: 350, sale: null, color: "#F2F2F2", stripe: "#6CABDD", image: "images/City.third.webp", backImage: "images/City.third.webp" },
-  { id: 28, club: "Tottenham Hotspur", kit: "Home 2026/27", number: 7, price: 350, sale: null, color: "#FFFFFF", stripe: "#132257", image: "images/Spurs.home.webp", backImage: "images/Spurs.home.webp" },
-  { id: 29, club: "Tottenham Hotspur", kit: "Away 2026/27", number: 7, price: 350, sale: null, color: "#132257", stripe: "#FFFFFF", image: "images/Spurs.away.webp", backImage: "images/Spurs.away.webp" },
-  { id: 30, club: "Tottenham Hotspur", kit: "Third 2026/27", number: 7, price: 350, sale: null, color: "#6CABDD", stripe: "#132257", image: "images/Spurs.third.webp", backImage: "images/Spurs.third.webp" },
-  { id: 31, club: "Atletico Madrid", kit: "Home 2026/27", number: 7, price: 350, sale: null, color: "#CE3524", stripe: "#FFFFFF", image: "images/Atm.home.jpg", backImage: "images/Atm.home.jpg" },
-  { id: 32, club: "Atletico Madrid", kit: "Away 2026/27", number: 7, price: 350, sale: null, color: "#1D428A", stripe: "#CE3524", image: "customJersey/Atm.away.front.webp", backImage: "customJersey/Atm.away.front.webp" },
-  { id: 33, club: "Atletico Madrid", kit: "Third 2026/27", number: 7, price: 350, sale: null, color: "#111111", stripe: "#CE3524", image: "images/Atm.third.jpeg", backImage: "images/Atm.third.jpeg" },
-  { id: 34, club: "Borussia Dortmund", kit: "Home 2026/27", number: 9, price: 350, sale: null, color: "#FDE100", stripe: "#111111", image: "images/Dortmund.home.webp", backImage: "images/Dortmund.home.webp" },
-  { id: 35, club: "Borussia Dortmund", kit: "Away 2026/27", number: 9, price: 350, sale: null, color: "#111111", stripe: "#FDE100", image: "images/Dortmund.away.webp", backImage: "images/Dortmund.away.webp" },
-  { id: 36, club: "Borussia Dortmund", kit: "Third 2026/27", number: 9, price: 350, sale: null, color: "#FFFFFF", stripe: "#FDE100", image: "images/Dortmund.third.jpg", backImage: "images/Dortmund.third.jpg" },
-  { id: 37, club: "Juventus", kit: "Home 2026/27", number: 10, price: 350, sale: null, color: "#FFFFFF", stripe: "#111111", image: "customJersey/Juv.home.front.webp", backImage: "customJersey/juv.home.back.webp" },
-  { id: 38, club: "Juventus", kit: "Away 2026/27", number: 10, price: 350, sale: null, color: "#111111", stripe: "#FFFFFF", image: "images/Juv.away.webp", backImage: "images/Juv.away.webp" },
-  { id: 39, club: "Juventus", kit: "Third 2026/27", number: 10, price: 350, sale: null, color: "#C8A45D", stripe: "#111111", image: "images/Juv.third.jpg", backImage: "images/Juv.third.jpg" },
-  { id: 40, club: "Inter Milan", kit: "Home 2026/27", number: 10, price: 350, sale: null, color: "#0068A8", stripe: "#000000", image: "customJersey/Inter.home.front.webp", backImage: "customJersey/Inter.home.back.webp" },
-  { id: 41, club: "Inter Milan", kit: "Away 2026/27", number: 10, price: 350, sale: null, color: "#FFFFFF", stripe: "#0068A8", image: "images/Inter.away.webp", backImage: "images/Inter.away.webp" },
-  { id: 42, club: "Inter Milan", kit: "Third 2026/27", number: 10, price: 350, sale: null, color: "#000000", stripe: "#00FF00", image: "images/Inter.third.webp", backImage: "images/Inter.third.webp" },
-  { id: 43, club: "Al-Nassr", kit: "Home 2026/27", number: 7, price: 380, sale: null, color: "#FDE100", stripe: "#000000", image: "customJersey/AlNassr.home.front.webp", backImage: "customJersey/AlNassr.home.back.webp" },
-  { id: 44, club: "Al-Nassr", kit: "Away 2026/27", number: 7, price: 380, sale: null, color: "#1D1D1D", stripe: "#FFFFFF", image: "customJersey/AlNassr.away.front.webp", backImage: "customJersey/AlNassr.away.back.webp" },
-  { id: 45, club: "Al-Nassr", kit: "Third 2026/27", number: 7, price: 380, sale: null, color: "#FF0000", stripe: "#FFFFFF", image: "customJersey/AlNassr.third.front.webp", backImage: "customJersey/AlNassr.third.back.webp" },
-  { id: 46, club: "Inter Miami", kit: "Home 2026/27", number: 10, price: 400, sale: null, color: "#F9E1E2", stripe: "#613913", image: "images/Miami.home.webp", backImage: "images/Miami.home.webp" },
-  { id: 47, club: "Inter Miami", kit: "Away 2026/27", number: 10, price: 400, sale: null, color: "#613913", stripe: "#FFFFFF", image: "images/Miami.away.webp", backImage: "images/Miami.away.webp" },
-  { id: 48, club: "Inter Miami", kit: "Third 2026/27", number: 10, price: 400, sale: null, color: "#000000", stripe: "#F9E1E2", image: "customJersey/Miami.third.front.webp", backImage: "customJersey/Miami.third.back.webp" },
+  { id: 28, club: "Tottenham Hotspur", kit: "Home 2026/27", available: true, number: 7, price: 350, sale: null, color: "#FFFFFF", stripe: "#132257", image: "images/Spurs.home.webp", backImage: "images/Spurs.home.webp" },
+  { id: 29, club: "Tottenham Hotspur", kit: "Away 2026/27", available: false, number: 7, price: 350, sale: null, color: "#132257", stripe: "#FFFFFF", image: "images/Spurs.away.webp", backImage: "images/Spurs.away.webp" },
+  { id: 30, club: "Tottenham Hotspur", kit: "Third 2026/27", available: false, number: 7, price: 350, sale: null, color: "#6CABDD", stripe: "#132257", image: "images/Spurs.third.webp", backImage: "images/Spurs.third.webp" },
+  { id: 31, club: "Atletico Madrid", kit: "Home 2026/27", available: true, number: 7, price: 350, sale: null, color: "#CE3524", stripe: "#FFFFFF", image: "images/Atm.home.jpg", backImage: "images/Atm.home.jpg" },
+  { id: 32, club: "Atletico Madrid", kit: "Away 2026/27", available: true, number: 7, price: 350, sale: null, color: "#1D428A", stripe: "#CE3524", image: "customJersey/Atm.away.front.webp", backImage: "customJersey/Atm.away.front.webp" },
+  { id: 33, club: "Atletico Madrid", kit: "Third 2026/27", available: false, number: 7, price: 350, sale: null, color: "#111111", stripe: "#CE3524", image: "images/Atm.third.jpeg", backImage: "images/Atm.third.jpeg" },
+  { id: 34, club: "Borussia Dortmund", kit: "Home 2026/27", available: false, number: 9, price: 350, sale: null, color: "#FDE100", stripe: "#111111", image: "images/Dortmund.home.webp", backImage: "images/Dortmund.home.webp" },
+  { id: 35, club: "Borussia Dortmund", kit: "Away 2026/27", available: false, number: 9, price: 350, sale: null, color: "#111111", stripe: "#FDE100", image: "images/Dortmund.away.webp", backImage: "images/Dortmund.away.webp" },
+  { id: 36, club: "Borussia Dortmund", kit: "Third 2026/27", available: false, number: 9, price: 350, sale: null, color: "#FFFFFF", stripe: "#FDE100", image: "images/Dortmund.third.jpg", backImage: "images/Dortmund.third.jpg" },
+  { id: 37, club: "Juventus", kit: "Home 2026/27", available: true, number: 10, price: 350, sale: null, color: "#FFFFFF", stripe: "#111111", image: "customJersey/Juv.home.front.webp", backImage: "customJersey/juv.home.back.webp" },
+  { id: 38, club: "Juventus", kit: "Away 2026/27", available: false, number: 10, price: 350, sale: null, color: "#111111", stripe: "#FFFFFF", image: "images/Juv.away.webp", backImage: "images/Juv.away.webp" },
+  { id: 39, club: "Juventus", kit: "Third 2026/27", available: false, number: 10, price: 350, sale: null, color: "#C8A45D", stripe: "#111111", image: "images/Juv.third.jpg", backImage: "images/Juv.third.jpg" },
+  { id: 40, club: "Inter Milan", kit: "Home 2026/27", available: true, number: 10, price: 350, sale: null, color: "#0068A8", stripe: "#000000", image: "customJersey/Inter.home.front.webp", backImage: "customJersey/Inter.home.back.webp" },
+  { id: 41, club: "Inter Milan", kit: "Away 2026/27", available: true, number: 10, price: 350, sale: null, color: "#FFFFFF", stripe: "#0068A8", image: "images/Inter.away.webp", backImage: "images/Inter.away.webp" },
+  { id: 42, club: "Inter Milan", kit: "Third 2026/27", available: true, number: 10, price: 350, sale: null, color: "#000000", stripe: "#00FF00", image: "images/Inter.third.webp", backImage: "images/Inter.third.webp" },
+  { id: 43, club: "Al-Nassr", kit: "Home 2026/27", available: true, number: 7, price: 380, sale: null, color: "#FDE100", stripe: "#000000", image: "customJersey/AlNassr.home.front.webp", backImage: "customJersey/AlNassr.home.back.webp" },
+  { id: 44, club: "Al-Nassr", kit: "Away 2026/27", available: true, number: 7, price: 380, sale: null, color: "#1D1D1D", stripe: "#FFFFFF", image: "customJersey/AlNassr.away.front.webp", backImage: "customJersey/AlNassr.away.back.webp" },
+  { id: 45, club: "Al-Nassr", kit: "Third 2026/27", available: true, number: 7, price: 380, sale: null, color: "#FF0000", stripe: "#FFFFFF", image: "customJersey/AlNassr.third.front.webp", backImage: "customJersey/AlNassr.third.back.webp" },
+  { id: 46, club: "Inter Miami", kit: "Home 2026/27", available: true, number: 10, price: 400, sale: null, color: "#F9E1E2", stripe: "#613913", image: "images/Miami.home.webp", backImage: "images/Miami.home.webp" },
+  { id: 47, club: "Inter Miami", kit: "Away 2026/27", available: true, number: 10, price: 400, sale: null, color: "#613913", stripe: "#FFFFFF", image: "images/Miami.away.webp", backImage: "images/Miami.away.webp" },
+  { id: 48, club: "Inter Miami", kit: "Third 2026/27", available: true, number: 10, price: 400, sale: null, color: "#000000", stripe: "#F9E1E2", image: "customJersey/Miami.third.front.webp", backImage: "customJersey/Miami.third.back.webp" },
 ];
 
 const SIZES = ["M", "L", "XL", "XXL"];
@@ -138,20 +138,8 @@ async function loadProductsFromApi() {
 }
 
 function getProductAvailability(p) {
-  const kit = String(p.kit);
-  if (
-    (p.club === "Liverpool") ||
-    ((p.club === "Barcelona" || p.club === "Real Madrid" || p.club === "Chelsea") && kit.startsWith("Third")) ||
-    (p.club === "PSG" && (kit.startsWith("Home") || kit.startsWith("Away"))) ||
-    (p.club === "Bayern Munich" && (kit.startsWith("Home") || kit.startsWith("Away"))) ||
-    (p.club === "Tottenham Hotspur" && kit.startsWith("Home")) ||
-    (p.club === "Atletico Madrid" && (kit.startsWith("Home") || kit.startsWith("Away"))) ||
-    (p.club === "Juventus" && kit.startsWith("Home"))
-  ) {
-    return "Available";
-  }
   if (typeof p.availability === "string") return p.availability;
-  if (p.available === false) return "Not available";
+  if (typeof p.available === "boolean") return p.available ? "Available" : "Not available";
   return AVAILABILITY_BY_CLUB[p.club] || "Not available";
 }
 

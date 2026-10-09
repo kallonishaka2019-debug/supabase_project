@@ -406,8 +406,6 @@ function setupGlobalEvents() {
   }
   
   const openCartBtn = document.getElementById('openCartBtn');
-  const mobileCartBar = document.getElementById('mobileCartBar');
-  if (mobileCartBar) mobileCartBar.addEventListener('click', openDrawer);
   if (openCartBtn) {
     openCartBtn.addEventListener('click', openDrawer);
   }

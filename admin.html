@@ -123,6 +123,61 @@
         background: var(--success);
         color: #fff;
       }
+      .badge-cancelled {
+        background: var(--error);
+        color: #fff;
+      }
+      .admin-section {
+        overflow-x: auto;
+      }
+      .admin-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .admin-toolbar input,
+      .admin-toolbar select {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        font-family: inherit;
+        background: #fff;
+      }
+      .admin-toolbar input[type="search"] {
+        flex: 1 1 220px;
+        min-width: 160px;
+      }
+      .admin-toolbar .admin-count {
+        margin-left: auto;
+        color: var(--ink-soft);
+        font-size: 13px;
+      }
+      .admin-pager {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 16px;
+        color: var(--ink-soft);
+        font-size: 13px;
+      }
+      .admin-btn.small {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+      .item-custom {
+        display: block;
+        color: var(--pitch-dark);
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .pay-sub {
+        display: block;
+        color: var(--ink-soft);
+        font-size: 12px;
+      }
       .admin-form {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -277,6 +332,15 @@
 
       <div class="admin-section" id="products">
         <h3 style="margin-bottom: 16px">Manage Products</h3>
+        <div class="admin-toolbar">
+          <input type="search" id="productSearch" placeholder="Search club or kit" aria-label="Search products" />
+          <select id="productFilter" aria-label="Filter by availability">
+            <option value="all">All products</option>
+            <option value="available">Available</option>
+            <option value="unavailable">Unavailable</option>
+          </select>
+          <span class="admin-count" id="productCount"></span>
+        </div>
         <table class="admin-table" id="productsTable">
           <thead>
             <tr>
@@ -290,10 +354,23 @@
           </thead>
           <tbody id="productsBody"></tbody>
         </table>
+        <div class="admin-pager" id="productPager"></div>
       </div>
 
       <div class="admin-section" id="orders">
         <h3 style="margin-bottom: 16px">All Orders</h3>
+        <div class="admin-toolbar">
+          <input type="search" id="orderSearch" placeholder="Search order #, customer, phone or item" aria-label="Search orders" />
+          <select id="orderFilter" aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="fulfilled">Fulfilled</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <button class="admin-btn" type="button" id="exportOrdersBtn">Export CSV</button>
+          <span class="admin-count" id="orderCount"></span>
+        </div>
         <table class="admin-table" id="ordersTable">
           <thead>
             <tr>
@@ -310,6 +387,7 @@
           </thead>
           <tbody id="ordersBody"></tbody>
         </table>
+        <div class="admin-pager" id="orderPager"></div>
       </div>
 
       <div class="admin-section" id="add-product">
@@ -461,12 +539,7 @@
 
             showAdmin();
           } else {
-            if (email === "admin@jerseyhub.com" && password === "admin123") {
-              currentAdmin = { email };
-              showAdmin();
-            } else {
-              alert("Invalid credentials");
-            }
+            alert("Admin login is not configured.");
           }
         });
 
@@ -514,12 +587,253 @@
 
       function orderItemsSummary(items) {
         return (items || [])
-          .map(
-            (item) =>
-              `${escapeHtml(item.club)} (${escapeHtml(item.size)}) \u00d7${item.quantity}`,
-          )
-          .join(", ");
+          .map((item) => {
+            const line = `${escapeHtml(item.club)} ${escapeHtml(item.kit || "")} (${escapeHtml(item.size)}) \u00d7${Number(item.quantity)}`;
+            const custom = item.custom
+              ? `<span class="item-custom">Custom: ${escapeHtml(item.customName)} #${escapeHtml(item.customNumber)}</span>`
+              : "";
+            return `<div>${line}${custom}</div>`;
+          })
+          .join("");
       }
+
+      function paymentSummary(order) {
+        const method = order.payment_method === "monime" ? "Monime" : order.payment_method;
+        const paid = ["confirmed", "fulfilled"].includes(order.status);
+        const state =
+          order.status === "cancelled"
+            ? "Cancelled"
+            : paid
+              ? "Paid"
+              : "Awaiting payment";
+        const plan = order.payment_plan ? ` \u00b7 ${order.payment_plan}` : "";
+        const due = order.payment_due
+          ? `Due Le ${Number(order.payment_due).toLocaleString()}`
+          : "";
+        return `${escapeHtml(method)}${escapeHtml(plan)}<span class="pay-sub">${state}${due ? " \u00b7 " + due : ""}</span>`;
+      }
+
+      const PAGE_SIZE = 15;
+      let allOrders = [];
+      let productPage = 1;
+      let orderPage = 1;
+
+      function renderPager(el, page, totalPages, onChange) {
+        el.innerHTML = "";
+        if (totalPages <= 1) return;
+        const prev = document.createElement("button");
+        prev.className = "admin-btn small";
+        prev.textContent = "Previous";
+        prev.disabled = page <= 1;
+        prev.onclick = () => onChange(page - 1);
+        const next = document.createElement("button");
+        next.className = "admin-btn small";
+        next.textContent = "Next";
+        next.disabled = page >= totalPages;
+        next.onclick = () => onChange(page + 1);
+        const label = document.createElement("span");
+        label.textContent = `Page ${page} of ${totalPages}`;
+        el.append(prev, label, next);
+      }
+
+      function filteredProducts() {
+        const q = document.getElementById("productSearch").value.trim().toLowerCase();
+        const filter = document.getElementById("productFilter").value;
+        return adminProducts.filter(
+          (p) =>
+            (!q || `${p.club} ${p.kit}`.toLowerCase().includes(q)) &&
+            (filter === "all" ||
+              (filter === "available") === (p.available !== false)),
+        );
+      }
+
+      function renderProducts() {
+        const tbody = document.getElementById("productsBody");
+        const list = filteredProducts();
+        const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+        productPage = Math.min(productPage, totalPages);
+        const rows = list.slice((productPage - 1) * PAGE_SIZE, productPage * PAGE_SIZE);
+        document.getElementById("productCount").textContent = `${list.length} of ${adminProducts.length} products`;
+        tbody.innerHTML = rows.length
+          ? rows
+              .map(
+                (product) => `
+            <tr>
+              <td>${product.id}</td>
+              <td>${escapeHtml(product.club)}</td>
+              <td>${escapeHtml(product.kit)}</td>
+              <td>Le ${Number(product.price).toLocaleString()}</td>
+              <td><span class="badge badge-${product.available ? "available" : "unavailable"}">${product.available ? "Available" : "Unavailable"}</span></td>
+              <td>
+                <button class="admin-btn small" type="button" onclick="toggleProductAvailability(${product.id})">${product.available ? "Mark unavailable" : "Mark available"}</button>
+                <button class="admin-btn small" type="button" onclick="startProductEdit(${product.id})">Edit</button>
+                <button class="admin-btn small danger" type="button" onclick="deleteProduct(${product.id})">Delete</button>
+              </td>
+            </tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">No products found</td></tr>';
+        renderPager(document.getElementById("productPager"), productPage, totalPages, (page) => {
+          productPage = page;
+          renderProducts();
+        });
+      }
+
+      async function toggleProductAvailability(productId) {
+        const product = adminProducts.find((item) => item.id === productId);
+        if (!product) return;
+        const response = await fetch(`${window.API_BASE_URL}/admin/products/${productId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            club: product.club,
+            kit: product.kit,
+            price: product.price,
+            sale: product.sale ?? null,
+            number: product.number ?? null,
+            color: product.color,
+            stripe: product.stripe,
+            textColor: product.text_color || product.textColor || null,
+            image: product.image || null,
+            backImage: product.back_image || product.backImage || null,
+            available: !product.available,
+          }),
+        });
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({}));
+          alert(result.error || "Could not update availability.");
+          return;
+        }
+        await loadProducts();
+      }
+
+      function orderSearchText(order) {
+        const items = (order.items || [])
+          .map((item) => `${item.club} ${item.kit || ""} ${item.customName || ""} ${item.customNumber || ""}`)
+          .join(" ");
+        return `${order.id} ${order.user_name || order.customer_name} ${order.user_phone || order.customer_phone} ${items}`.toLowerCase();
+      }
+
+      function filteredOrders() {
+        const q = document.getElementById("orderSearch").value.trim().toLowerCase();
+        const filter = document.getElementById("orderFilter").value;
+        return allOrders.filter(
+          (order) =>
+            (filter === "all" || order.status === filter) &&
+            (!q || orderSearchText(order).includes(q)),
+        );
+      }
+
+      function renderOrders() {
+        const tbody = document.getElementById("ordersBody");
+        const list = filteredOrders();
+        const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+        orderPage = Math.min(orderPage, totalPages);
+        const rows = list.slice((orderPage - 1) * PAGE_SIZE, orderPage * PAGE_SIZE);
+        document.getElementById("orderCount").textContent = `${list.length} of ${allOrders.length} orders`;
+        tbody.innerHTML = rows.length
+          ? rows
+              .map(
+                (order) => `
+            <tr>
+              <td>#${order.id}</td>
+              <td>${escapeHtml(order.user_name || order.customer_name)}</td>
+              <td>${escapeHtml(order.user_phone || order.customer_phone)}</td>
+              <td>${orderItemsSummary(order.items)}</td>
+              <td>Le ${Number(order.total).toLocaleString()}</td>
+              <td>${paymentSummary(order)}</td>
+              <td><span class="badge badge-${escapeHtml(order.status)}">${escapeHtml(order.status)}</span></td>
+              <td>${new Date(order.created_at).toLocaleDateString()}</td>
+              <td>
+                <select class="admin-btn small" data-order-id="${order.id}" onchange="updateOrderStatus(${order.id}, this.value)">
+                  <option value="pending" ${order.status === "pending" ? "selected" : ""}>Pending</option>
+                  <option value="confirmed" ${order.status === "confirmed" ? "selected" : ""}>Confirmed</option>
+                  <option value="fulfilled" ${order.status === "fulfilled" ? "selected" : ""}>Fulfilled (delivered)</option>
+                  <option value="cancelled" ${order.status === "cancelled" ? "selected" : ""}>Cancelled</option>
+                </select>
+                <button class="admin-btn small danger" type="button" onclick="deleteOrder(${order.id})">Delete</button>
+              </td>
+            </tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">No orders found</td></tr>';
+        renderPager(document.getElementById("orderPager"), orderPage, totalPages, (page) => {
+          orderPage = page;
+          renderOrders();
+        });
+      }
+
+      async function deleteOrder(orderId) {
+        if (!confirm(`Delete order #${orderId}? This cannot be undone.`)) return;
+        const response = await fetch(`${window.API_BASE_URL}/admin/orders/${orderId}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({}));
+          alert(result.error || "Could not delete order.");
+          return;
+        }
+        await loadOrders();
+      }
+
+      // Prefix risky leading characters so spreadsheet apps don't run cell values as formulas.
+      function csvCell(value) {
+        let text = String(value ?? "");
+        if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+
+      function exportOrdersCsv() {
+        const header = ["Order", "Customer", "Phone", "Items", "Custom names", "Total", "Payment method", "Payment plan", "Amount due", "Status", "Delivery", "Address", "Date"];
+        const lines = filteredOrders().map((order) => {
+          const items = (order.items || [])
+            .map((item) => `${item.club} ${item.kit || ""} (${item.size}) x${item.quantity}`)
+            .join("; ");
+          const custom = (order.items || [])
+            .filter((item) => item.custom)
+            .map((item) => `${item.customName} #${item.customNumber}`)
+            .join("; ");
+          return [
+            order.id,
+            order.user_name || order.customer_name,
+            order.user_phone || order.customer_phone,
+            items,
+            custom,
+            order.total,
+            order.payment_method,
+            order.payment_plan,
+            order.payment_due,
+            order.status,
+            order.delivery_method,
+            order.delivery_address,
+            new Date(order.created_at).toISOString(),
+          ].map(csvCell).join(",");
+        });
+        const blob = new Blob([[header.map(csvCell).join(","), ...lines].join("\r\n")], { type: "text/csv;charset=utf-8" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `jerseyhub-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      }
+
+      ["productSearch", "productFilter"].forEach((id) =>
+        document.getElementById(id).addEventListener("input", () => {
+          productPage = 1;
+          renderProducts();
+        }),
+      );
+      ["orderSearch", "orderFilter"].forEach((id) =>
+        document.getElementById(id).addEventListener("input", () => {
+          orderPage = 1;
+          renderOrders();
+        }),
+      );
+      document.getElementById("exportOrdersBtn").addEventListener("click", exportOrdersCsv);
 
       async function loadProducts() {
         const tbody = document.getElementById("productsBody");
@@ -530,24 +844,7 @@
           if (!response.ok) throw new Error("Failed to load products");
           const { products = [] } = await response.json();
           adminProducts = products;
-          tbody.innerHTML = products.length
-            ? products
-                .map(
-                  (product) => `
-              <tr>
-                <td>${product.id}</td>
-                <td>${escapeHtml(product.club)}</td>
-                <td>${escapeHtml(product.kit)}</td>
-                <td>Le ${Number(product.price).toLocaleString()}</td>
-                <td><span class="badge badge-${product.available ? "available" : "unavailable"}">${product.available ? "Available" : "Unavailable"}</span></td>
-                <td>
-                  <button class="admin-btn" type="button" onclick="startProductEdit(${product.id})">Edit</button>
-                  <button class="admin-btn danger" type="button" onclick="deleteProduct(${product.id})">Delete</button>
-                </td>
-              </tr>`,
-                )
-                .join("")
-            : '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">No products found</td></tr>';
+          renderProducts();
         } catch {
           tbody.innerHTML =
             '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">Could not load products. Is the server running?</td></tr>';
@@ -610,34 +907,8 @@
           });
           if (!response.ok) throw new Error("Failed to load orders");
           const { orders } = await response.json();
-          if (!orders.length) {
-            tbody.innerHTML =
-              '<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">No orders yet</td></tr>';
-            return;
-          }
-          tbody.innerHTML = orders
-            .map(
-              (order) => `
-            <tr>
-              <td>#${order.id}</td>
-              <td>${escapeHtml(order.user_name || order.customer_name)}</td>
-              <td>${escapeHtml(order.user_phone || order.customer_phone)}</td>
-              <td>${orderItemsSummary(order.items)}</td>
-              <td>Le ${Number(order.total).toLocaleString()}</td>
-              <td>${escapeHtml(order.payment_method)}</td>
-              <td><span class="badge badge-${order.status}">${escapeHtml(order.status)}</span></td>
-              <td>${new Date(order.created_at).toLocaleDateString()}</td>
-              <td>
-                <select class="admin-btn" data-order-id="${order.id}" onchange="updateOrderStatus(${order.id}, this.value)">
-                  <option value="pending" ${order.status === "pending" ? "selected" : ""}>Pending</option>
-                  <option value="confirmed" ${order.status === "confirmed" ? "selected" : ""}>Confirmed</option>
-                  <option value="fulfilled" ${order.status === "fulfilled" ? "selected" : ""}>Fulfilled (delivered)</option>
-                  <option value="cancelled" ${order.status === "cancelled" ? "selected" : ""}>Cancelled</option>
-                </select>
-              </td>
-            </tr>`,
-            )
-            .join("");
+          allOrders = orders || [];
+          renderOrders();
         } catch {
           tbody.innerHTML =
             '<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">Could not load orders. Is the server running?</td></tr>';

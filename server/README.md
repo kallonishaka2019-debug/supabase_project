@@ -23,6 +23,7 @@ The server creates `jerseyhub.sqlite` on first start. It serves the existing sta
 - `POST /api/admin/products` (admin only)
 - `PATCH /api/admin/products/:id` (admin only)
 - `DELETE /api/admin/products/:id` (admin only)
+- `DELETE /api/admin/orders/:id` (admin only)
 - `POST /api/orders` (authenticated)
 - `GET /api/orders` (authenticated)
 
