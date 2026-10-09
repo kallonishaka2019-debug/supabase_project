@@ -110,13 +110,13 @@ nav a {
   color: var(--paper);
 }
 .hero h1 {
-  font-family: "Montserrat", Inter, sans-serif;
-  font-style: normal;
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-style: italic;
   font-weight: 800;
-  text-transform: none;
-  letter-spacing: -0.02em;
-  font-size: clamp(38px, 6vw, 64px);
-  line-height: 1.08;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  font-size: clamp(46px, 8vw, 80px);
+  line-height: 0.98;
   margin: 16px 0 22px;
 }
 .hero p {

@@ -27,7 +27,7 @@ window.APP_CONFIG = {
   },
   delivery: {
     pickup: { cost: 0, estimatedDays: 'Same day - 2 days', address: '30 Mountain Cut, Freetown' },
-    standard: { cost: 50, estimatedDays: 'Within 24 hours' }
+    standard: { cost: 50, estimatedDays: 'Delivery in 24 hours' }
   }
 };
 
