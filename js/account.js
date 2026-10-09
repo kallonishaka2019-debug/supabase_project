@@ -201,8 +201,8 @@ function renderOrderHistory(container, orders) {
         <div class="order-card-body">
           ${items.map(item => `
             <div class="order-item">
-              <span>${item.club} ${item.kit ? `(${item.kit})` : ''} - Size ${item.size} × ${item.quantity}</span>
-              <span>${CURRENCY} ${item.unit_price * item.quantity}</span>
+              <span>${escapeHtml(item.club)} ${item.kit ? `(${escapeHtml(item.kit)})` : ''} - Size ${escapeHtml(item.size)} × ${item.quantity}${item.custom ? ` · ${escapeHtml(item.customName ?? item.custom_name)} #${escapeHtml(item.customNumber ?? item.custom_number)}` : ''}</span>
+              <span>${CURRENCY} ${(item.unitPrice ?? item.unit_price) * item.quantity}</span>
             </div>
           `).join('')}
           <div class="order-total">
@@ -222,15 +222,15 @@ async function saveCheckoutOrder() {
   const items = cart.map(item => {
     const product = getCartProduct(item);
     return {
-      product_id: item.custom ? null : product.id,
+      product_id: product.id,
       club: product.club,
       kit: product.kit,
       size: item.size,
       quantity: item.qty,
       unit_price: product.price,
-      custom: Boolean(item.custom),
-      custom_name: item.custom ? product.customName || '' : null,
-      custom_number: item.custom ? product.number || null : null
+      custom: Boolean(item.customized),
+      custom_name: item.customized ? String(item.customName).trim() : null,
+      custom_number: item.customized ? String(item.customNumber) : null
     };
   });
 

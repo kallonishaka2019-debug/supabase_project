@@ -151,15 +151,14 @@ function cartStepHtml() {
   
   const rows = cart.map(item => {
     const p = getCartProduct(item);
-    const label = item.custom ? `${p.club} • Custom` : p.club;
     const isAvailable = isProductAvailable(p);
     const itemPrice = p ? p.price * item.qty : 0;
     return `
       <div class="line-item ${isAvailable ? '' : 'line-item-unavailable'}">
         <div class="li-thumb">${jerseyVisual(p)}</div>
         <div class="li-info">
-          <div class="li-club">${label}</div>
-          <div class="li-meta">Size ${item.size} · ${item.custom ? `${p.kit} · ${p.customName}` : p.kit}</div>
+          <div class="li-club">${p.club}</div>
+          <div class="li-meta">Size ${item.size} · ${p.kit}</div>
           <div class="li-status ${isAvailable ? 'available' : 'unavailable'}">${isAvailable ? 'Available' : 'order request'}</div>
           <div class="li-controls">
             <button class="qty-btn" data-qty-down="${item.productId}" data-size="${item.size}">−</button>
@@ -169,6 +168,24 @@ function cartStepHtml() {
           </div>
         </div>
         <div class="li-price">${CURRENCY} ${itemPrice}</div>
+        <div class="li-custom ${item.customized ? 'active' : ''}">
+          <label class="li-custom-toggle">
+            <input type="checkbox" data-customize="${item.productId}" data-size="${item.size}" ${item.customized ? 'checked' : ''}>
+            <span>Customize with name &amp; number <strong>${CURRENCY} ${CUSTOM_KIT_PRICE} each</strong></span>
+          </label>
+          ${item.customized ? `
+            <div class="li-custom-fields">
+              <div class="li-custom-field">
+                <label for="customName-${item.productId}-${item.size}">Name</label>
+                <input id="customName-${item.productId}-${item.size}" type="text" maxlength="${CUSTOM_NAME_MAX_LENGTH}" placeholder="e.g. KALLON" value="${escapeHtml(item.customName)}" data-custom-field="customName" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
+              </div>
+              <div class="li-custom-field li-custom-number">
+                <label for="customNumber-${item.productId}-${item.size}">Number</label>
+                <input id="customNumber-${item.productId}-${item.size}" type="text" inputmode="numeric" maxlength="2" placeholder="0-99" value="${escapeHtml(item.customNumber)}" data-custom-field="customNumber" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
+              </div>
+            </div>
+            ${item.qty > 1 ? `<p class="li-custom-note">Applies to all ${item.qty} jerseys on this line.</p>` : ''}` : ''}
+        </div>
       </div>`;
   }).join('');
   
@@ -256,7 +273,7 @@ function confirmStepHtml() {
         <div class="summary-block">
           ${cart.map(item => {
             const p = getCartProduct(item);
-            const label = item.custom ? `${p.club} · ${p.customName}` : `${p.club}`;
+            const label = item.customized ? `${p.club} · ${item.customName} #${item.customNumber}` : `${p.club}`;
             return `<div class="li-row"><span>${label} (${item.size}) ×${item.qty}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
           }).join('')}
           <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
@@ -282,7 +299,7 @@ function confirmStepHtml() {
       <div class="summary-block">
         ${cart.map(item => {
           const p = getCartProduct(item);
-          const label = item.custom ? `${p.club} · ${p.customName}` : `${p.club}`;
+          const label = item.customized ? `${p.club} · ${item.customName} #${item.customNumber}` : `${p.club}`;
           return `<div class="li-row"><span>${label} (${item.size}) ×${item.qty}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
         }).join('')}
         <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">

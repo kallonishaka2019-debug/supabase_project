@@ -15,9 +15,6 @@ function loadCart() {
 }
 
 function validateCartItem(item) {
-  if (item?.custom) {
-    return SIZES.includes(item.size) && Number.isInteger(item.qty) && item.qty > 0 && typeof item.customTeam === 'string';
-  }
   const product = PRODUCTS.find(candidate => candidate.id === item.productId);
   return product && SIZES.includes(item.size) && Number.isInteger(item.qty) && item.qty > 0;
 }
@@ -61,29 +58,44 @@ function addToCart(productId, size) {
   showSuccess(product && isProductAvailable(product) ? '✓ Added to cart' : '✓ Order request added');
 }
 
-function addCustomJerseyToCart(config) {
+function sanitizeCustomName(value) {
+  return String(value || '').replace(/[^A-Za-z0-9 .'-]/g, '').slice(0, CUSTOM_NAME_MAX_LENGTH);
+}
+
+function sanitizeCustomNumber(value) {
+  return String(value || '').replace(/\D/g, '').slice(0, 2);
+}
+
+function findCartItem(productId, size) {
+  const normalizedId = normalizeCartProductId(productId);
+  return cart.find(i => i.productId === normalizedId && i.size === size);
+}
+
+function setItemCustomization(productId, size, enabled) {
+  const item = findCartItem(productId, size);
+  if (!item) return;
   invalidatePendingMonimeOrder();
-  const customItem = {
-    productId: `custom-${Date.now()}`,
-    size: config.size,
-    qty: 1,
-    custom: true,
-    customTeam: config.team,
-    customKit: config.kit,
-    customName: config.name,
-    customNumber: config.number,
-    customPrice: CUSTOMIZER_PRICE,
-    color: getTeamPalette(config.team).color,
-    stripe: getTeamPalette(config.team).stripe,
-    customStyle: config.font,
-    customNameColor: config.nameColor,
-    customAvailable: isProductAvailable(getCustomizerProduct(config.team, config.kit)),
-  };
-  cart.push(customItem);
+  item.customized = enabled;
+  if (enabled) {
+    item.customName = item.customName || '';
+    item.customNumber = item.customNumber ?? '';
+  }
   persistCart();
-  updateCartCount();
-  const product = getCustomizerProduct(config.team, config.kit);
-  showSuccess(isProductAvailable(product) ? '✓ Added to cart' : '✓ Order request added');
+  renderDrawer();
+}
+
+function updateItemCustomization(productId, size, field, value) {
+  const item = findCartItem(productId, size);
+  if (!item) return '';
+  invalidatePendingMonimeOrder();
+  const cleaned = field === 'customNumber' ? sanitizeCustomNumber(value) : sanitizeCustomName(value);
+  item[field] = cleaned;
+  persistCart();
+  return cleaned;
+}
+
+function isItemCustomizationComplete(item) {
+  return !item.customized || (Boolean(String(item.customName || '').trim()) && String(item.customNumber ?? '') !== '');
 }
 
 function updateQty(productId, size, delta) {
@@ -147,23 +159,9 @@ function updateCartCount() {
 }
 
 function getCartProduct(item) {
-  if (item?.custom) {
-    return {
-      id: item.productId,
-      club: item.customTeam,
-      kit: item.customKit,
-      number: item.customNumber,
-      price: item.customPrice ?? CUSTOMIZER_PRICE,
-      color: item.color || '#A50044',
-      stripe: item.stripe || '#FFFFFF',
-      customName: item.customName,
-      customStyle: item.customStyle,
-      image: null,
-      custom: true,
-      available: item.customAvailable !== false,
-    };
-  }
-  return PRODUCTS.find(candidate => candidate.id === item.productId) || null;
+  const product = PRODUCTS.find(candidate => candidate.id === item.productId);
+  if (!product) return null;
+  return item.customized ? { ...product, price: CUSTOM_KIT_PRICE } : product;
 }
 
 function clearCart() {

@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderGrid();
   updatePagination();
 
-  await initializeCustomizer();
   await sessionRestore;
 
   const verifiedParam = new URLSearchParams(window.location.search).get('verified');

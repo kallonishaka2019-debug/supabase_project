@@ -466,19 +466,19 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
   const normalizedItems = items.map((item) => {
     const custom = Boolean(item.custom);
     const productId = item.productId ?? item.product_id;
-    const product = custom
-      ? null
-      : catalog.find((candidate) => String(candidate.id) === String(productId));
+    const product = catalog.find((candidate) => String(candidate.id) === String(productId));
+    const customName = custom ? String(item.customName ?? item.custom_name ?? "").trim() : null;
+    const customNumber = custom ? String(item.customNumber ?? item.custom_number ?? "").trim() : null;
     return {
-      productId: custom ? null : product?.id ?? productId,
-      club: custom ? String(item.club || "") : String(product?.club || ""),
-      kit: custom ? String(item.kit || "") : String(product?.kit || ""),
+      productId: product?.id ?? productId,
+      club: String(product?.club || ""),
+      kit: String(product?.kit || ""),
       size: String(item.size || ""),
       quantity: Number(item.quantity),
       unitPrice: custom ? customJerseyPrice : Number(product?.price),
       custom,
-      customName: custom ? String(item.customName || item.custom_name || "") : null,
-      customNumber: custom ? item.customNumber ?? item.custom_number ?? null : null,
+      customName,
+      customNumber,
     };
   });
   const invalidItem = normalizedItems.some(
@@ -486,8 +486,8 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
       !Number.isInteger(item.quantity) || item.quantity < 1 ||
       !Number.isSafeInteger(item.unitPrice) || item.unitPrice < 0 ||
       item.club.length < 2 || item.kit.length < 2 ||
-      (!item.custom && !catalog.some((product) => String(product.id) === String(item.productId))) ||
-      (item.custom && item.customName.length > 12),
+      !catalog.some((product) => String(product.id) === String(item.productId)) ||
+      (item.custom && (!/^[A-Za-z0-9 .'-]{1,12}$/.test(item.customName) || !/^\d{1,2}$/.test(item.customNumber))),
   );
   if (invalidItem) return response.status(400).json({ error: "Order contains invalid items" });
 

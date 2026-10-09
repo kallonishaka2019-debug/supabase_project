@@ -59,11 +59,30 @@ function bindDrawerEvents() {
     btn.addEventListener('click', () => removeItem(btn.dataset.remove, btn.dataset.size));
   });
   
+  document.querySelectorAll('[data-customize]').forEach(input => {
+    input.addEventListener('change', () => setItemCustomization(input.dataset.customize, input.dataset.size, input.checked));
+  });
+  document.querySelectorAll('[data-custom-field]').forEach(input => {
+    input.addEventListener('input', () => {
+      input.value = updateItemCustomization(input.dataset.customId, input.dataset.size, input.dataset.customField, input.value);
+      input.classList.remove('invalid');
+    });
+  });
+
   const toDetailsBtn = document.getElementById('toDetailsBtn');
   if (toDetailsBtn) {
     toDetailsBtn.addEventListener('click', () => {
       if (cart.length === 0) {
         showError('Your cart is empty');
+        return;
+      }
+      const incomplete = cart.filter(item => !isItemCustomizationComplete(item));
+      if (incomplete.length) {
+        document.querySelectorAll('[data-custom-field]').forEach(input => {
+          const item = findCartItem(input.dataset.customId, input.dataset.size);
+          if (item && incomplete.includes(item) && !String(input.value).trim()) input.classList.add('invalid');
+        });
+        showError('Enter a name and number for each customized jersey');
         return;
       }
       checkoutStep = 'details';
