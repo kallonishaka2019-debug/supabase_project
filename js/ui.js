@@ -241,6 +241,10 @@ function detailsStepHtml() {
           ${deliveryOptionsHtml}
         </div>
       </div>
+      <div class="field" id="pickupField" style="${isDelivery ? 'display:none;' : ''}">
+        <label>Pickup address</label>
+        <div class="payment-action"><span>${DELIVERY_OPTIONS.pickup.address}</span></div>
+      </div>
       <div class="field" id="tierField" style="${isDelivery ? '' : 'display:none;'}">
         <label for="fDeliveryTier">Delivery cost</label>
         <select id="fDeliveryTier">${deliveryTierHtml}</select>
@@ -309,7 +313,7 @@ function confirmStepHtml() {
         <div class="li-row"><span>Name</span><span>${window.customer?.name || '—'}</span></div>
         <div class="li-row"><span>Phone</span><span>${window.customer?.phone || '—'}</span></div>
         <div class="li-row"><span>Delivery</span><span style="text-transform:capitalize;">${window.customer?.delivery || 'pickup'}</span></div>
-        ${window.customer?.delivery !== 'pickup' ? `<div class="li-row"><span>Address</span><span>${window.customer?.address || '—'}</span></div>` : ''}
+        ${window.customer?.delivery !== 'pickup' ? `<div class="li-row"><span>Address</span><span>${window.customer?.address || '—'}</span></div>` : `<div class="li-row"><span>Pickup address</span><span>${DELIVERY_OPTIONS.pickup.address}</span></div>`}
         ${window.customer?.delivery === 'delivery' ? `<div class="li-row"><span>Delivery cost</span><span>${CURRENCY} ${deliveryCost()}</span></div>` : ''}
       </div>
     </div>
