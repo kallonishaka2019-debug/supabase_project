@@ -20,11 +20,11 @@ function applyTheme(theme, persist = false) {
   }
 }
 
-let savedTheme = 'light';
+let savedTheme = 'dark';
 try {
-  savedTheme = localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'dark' : 'light';
+  savedTheme = localStorage.getItem(THEME_STORAGE_KEY) === 'light' ? 'light' : 'dark';
 } catch {
-  // Use the light theme when browser storage is unavailable.
+  // Use the dark default when browser storage is unavailable.
 }
 applyTheme(savedTheme);
 
