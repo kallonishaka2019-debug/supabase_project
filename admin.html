@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="customJersey/css/styles.css?v=20260923" />
+    <link rel="stylesheet" href="css/styles.css?v=20260923" />
     <style>
       .admin-container {
         max-width: 1200px;
@@ -33,7 +33,7 @@
       .admin-tab {
         padding: 10px 20px;
         border: 1px solid var(--line);
-        background: #fff;
+        background: var(--surface);
         border-radius: var(--radius);
         font-weight: 600;
         cursor: pointer;
@@ -76,7 +76,7 @@
       .admin-table {
         width: 100%;
         border-collapse: collapse;
-        background: #fff;
+        background: var(--surface);
         border-radius: var(--radius);
         overflow: hidden;
       }
@@ -143,7 +143,7 @@
         border: 1px solid var(--line);
         border-radius: var(--radius);
         font-family: inherit;
-        background: #fff;
+        background: var(--surface);
       }
       .admin-toolbar input[type="search"] {
         flex: 1 1 220px;
@@ -182,7 +182,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 16px;
-        background: #fff;
+        background: var(--surface);
         padding: 24px;
         border-radius: var(--radius);
         border: 1px solid var(--line);
@@ -237,7 +237,7 @@
         max-width: 400px;
         margin: 100px auto;
         padding: 40px;
-        background: #fff;
+        background: var(--surface);
         border: 2px solid var(--ink);
         border-radius: 12px;
       }
@@ -245,6 +245,192 @@
         font-family: "Anton", sans-serif;
         font-size: 28px;
         margin-bottom: 24px;
+      }
+      .admin-header-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+      }
+      .admin-btn {
+        background: var(--paper-dim);
+        color: var(--ink);
+      }
+      .admin-btn.primary,
+      .admin-btn.danger {
+        color: #fff;
+      }
+      .admin-btn.primary {
+        background: var(--pitch);
+      }
+      .admin-btn.danger {
+        background: var(--error);
+      }
+      .admin-tabs {
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .admin-tab {
+        flex: 0 0 auto;
+        color: var(--ink);
+        background: var(--surface);
+      }
+      .admin-tab.active {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .admin-table td .admin-btn + .admin-btn {
+        margin-left: 6px;
+      }
+      .admin-form input,
+      .admin-form select,
+      .admin-toolbar input,
+      .admin-toolbar select {
+        background: var(--surface);
+        color: var(--ink);
+        min-height: 40px;
+      }
+      :root[data-theme="dark"] .badge-pending {
+        color: #1a1a1a;
+      }
+      :root[data-theme="dark"] .admin-table tr:hover td {
+        background: var(--paper-dim);
+      }
+      :root[data-theme="dark"] .login-container {
+        border-color: var(--line);
+      }
+
+      /* Tablet */
+      @media (max-width: 1024px) {
+        .admin-container {
+          padding: 24px 16px;
+        }
+        .admin-table th,
+        .admin-table td {
+          padding: 10px 12px;
+          font-size: 13px;
+        }
+      }
+
+      /* Phones, portrait and landscape: tables become stacked cards */
+      @media (max-width: 760px) {
+        .admin-container {
+          padding: 16px 12px;
+        }
+        .admin-header {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+        .admin-header-actions {
+          justify-content: space-between;
+        }
+        .stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        .stat-card {
+          padding: 14px;
+        }
+        .stat-card .value {
+          font-size: 26px;
+        }
+        .admin-toolbar > * {
+          flex: 1 1 100%;
+        }
+        .admin-toolbar .admin-count {
+          margin-left: 0;
+        }
+        .admin-form {
+          padding: 16px;
+          grid-template-columns: 1fr;
+        }
+        .login-container {
+          margin: 40px 12px;
+          padding: 24px;
+          max-width: none;
+        }
+        .admin-table,
+        .admin-table tbody,
+        .admin-table tr,
+        .admin-table td {
+          display: block;
+          width: 100%;
+        }
+        .admin-table thead {
+          display: none;
+        }
+        .admin-table {
+          background: transparent;
+        }
+        .admin-table tr {
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: 8px;
+          margin-bottom: 12px;
+          padding: 6px 0;
+        }
+        .admin-table td {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
+          border-bottom: 1px solid var(--line);
+          text-align: right;
+          padding: 8px 14px;
+        }
+        .admin-table td:last-child {
+          border-bottom: 0;
+        }
+        .admin-table td::before {
+          content: attr(data-label);
+          flex: 0 0 38%;
+          text-align: left;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--ink-soft);
+        }
+        .admin-table td[colspan] {
+          display: block;
+          text-align: center;
+        }
+        .admin-table td[colspan]::before {
+          display: none;
+        }
+        .admin-table td .admin-btn {
+          margin: 2px 0 2px 6px;
+        }
+      }
+
+      /* Short landscape phones: keep the layout compact */
+      @media (max-height: 500px) and (orientation: landscape) {
+        .admin-container {
+          padding: 12px;
+        }
+        .admin-header {
+          flex-direction: row;
+          align-items: center;
+          margin-bottom: 12px;
+          padding-bottom: 10px;
+        }
+        .login-container {
+          margin: 16px auto;
+          max-width: 420px;
+        }
+        .stats-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+
+      /* Large desktop */
+      @media (min-width: 1440px) {
+        .admin-container {
+          max-width: 1400px;
+        }
       }
     </style>
     <script>
@@ -279,11 +465,12 @@
     <div class="admin-container" id="adminSection" style="display: none">
       <div class="admin-header">
         <h1 class="display">JerseyHub Admin</h1>
-        <div>
-          <span
-            id="adminUser"
-            style="margin-right: 16px; color: var(--ink-soft)"
-          ></span>
+        <div class="admin-header-actions">
+          <span id="adminUser" style="color: var(--ink-soft)"></span>
+          <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">
+            <span class="theme-toggle-icon" aria-hidden="true">☾</span>
+            <span class="theme-toggle-label">Dark</span>
+          </button>
           <button class="admin-btn" id="logoutBtn">Logout</button>
         </div>
       </div>
@@ -476,6 +663,21 @@
       </div>
     </div>
 
+    <script src="js/theme.js"></script>
+    <script>
+      // Label each cell with its column header so tables can stack as cards on phones.
+      document.querySelectorAll(".admin-table").forEach((table) => {
+        const heads = [...table.querySelectorAll("thead th")].map((th) => th.textContent.trim());
+        const label = () =>
+          table.querySelectorAll("tbody tr").forEach((row) =>
+            [...row.children].forEach((cell, i) => {
+              if (!cell.hasAttribute("colspan") && heads[i]) cell.dataset.label = heads[i];
+            })
+          );
+        new MutationObserver(label).observe(table.tBodies[0], { childList: true });
+        label();
+      });
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       const supabaseUrl =
