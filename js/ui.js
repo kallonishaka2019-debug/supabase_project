@@ -41,13 +41,13 @@ function jerseySvg(p, size = 64) {
     sans: 'Roboto, sans-serif'
   };
   const fontFamily = fontMap[p.customStyle] || 'Anton, sans-serif';
-  const numberVal = p.customNumber || p.number || '';
+  const numberVal = p.customNumber ?? p.number ?? '';
   const nameColor = p.customNameColor || p.stripe || '#000000';
   return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
     <path d="M30 8 L10 22 L18 38 L28 32 L28 92 L72 92 L72 32 L82 38 L90 22 L70 8 L60 14 Q50 20 40 14 Z"
       fill="${p.color}" stroke="${p.stripe}" stroke-width="3"/>
     ${nameText ? `<text x="50" y="52" font-family="${fontFamily}" font-size="11" fill="${nameColor}" text-anchor="middle" letter-spacing="0.5">${nameText}</text>` : ''}
-    ${numberVal ? `<text x="50" y="${nameText ? 68 : 60}" font-family="${fontFamily}" font-size="26" fill="${nameColor}" text-anchor="middle">${numberVal}</text>` : ''}
+    ${numberVal !== '' ? `<text x="50" y="${nameText ? 68 : 60}" font-family="${fontFamily}" font-size="26" fill="${nameColor}" text-anchor="middle">${numberVal}</text>` : ''}
   </svg>`;
 }
 
@@ -71,16 +71,11 @@ function renderGrid() {
   
   grid.innerHTML = products.map(p => {
     const size = selectedSizeGlobal[p.id] || 'M';
-    const availability = getProductAvailability(p);
     const isAvailable = isProductAvailable(p);
-    const inWishlist = isInWishlist(p.id);
     
     return `
       <div class="card">
-        <span class="card-num">#${String(p.id).padStart(2, '0')}</span>
-        <span class="availability ${isAvailable ? 'available' : 'unavailable'}">${availability}</span>
         ${p.sale ? '<span class="card-sale">Sale</span>' : ''}
-        <button class="wishlist-btn ${inWishlist ? 'active' : ''}" data-wishlist="${p.id}" title="${inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}">${inWishlist ? '♥' : '♡'}</button>
         <div class="jersey-art ${p.backImage ? 'has-back' : ''}">${jerseyVisual(p)}</div>
         <div class="card-body">
           <div>
@@ -116,13 +111,6 @@ function renderGrid() {
         btn.textContent = btn.classList.contains('request-btn') ? 'Order this kit' : 'Add to cart';
         btn.classList.remove('added');
       }, 1100);
-    });
-  });
-  
-  grid.querySelectorAll('[data-wishlist]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleWishlist(Number(btn.dataset.wishlist));
     });
   });
 }
@@ -327,11 +315,13 @@ function paymentStepHtml() {
       <span class="step-label">Step 3 of 3 — Make payment</span>
       <div class="field">
         <label>Payment method</label>
-        <div class="radio-row">
-          ${Object.entries(PAYMENT_METHODS).map(([value, label]) => `
-            <label class="radio-opt ${window.customer?.paymentMethod === value ? 'active' : ''}">
-              <input type="radio" name="paymentMethod" value="${value}" ${window.customer?.paymentMethod === value ? 'checked' : ''}> ${label}
-            </label>`).join('')}
+        <div class="payment-method-card">
+          <span class="payment-method-mark" aria-hidden="true">M</span>
+          <span>
+            <strong>Monime</strong>
+            <small>Mobile Money, card or bank</small>
+          </span>
+          <span class="payment-method-check" aria-label="Selected">✓</span>
         </div>
       </div>
     </div>
@@ -340,4 +330,3 @@ function paymentStepHtml() {
       <button class="primary-btn" id="placeOrderBtn">Make payment</button>
     </div>`;
 }
-

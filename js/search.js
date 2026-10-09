@@ -1,18 +1,8 @@
-let currentSearchQuery = '';
 let catalogFilters = { league: 'all', team: 'all' };
 let currentPage = 1;
 
 function filterProducts() {
   let filtered = [...PRODUCTS];
-  
-  if (currentSearchQuery.trim().length >= 2) {
-    const q = currentSearchQuery.toLowerCase().trim();
-    filtered = filtered.filter(p => 
-      p.club.toLowerCase().includes(q) ||
-      p.kit.toLowerCase().includes(q) ||
-      (LEAGUE_BY_CLUB[p.club] && LEAGUE_BY_CLUB[p.club].toLowerCase().includes(q))
-    );
-  }
   
   if (catalogFilters.league !== 'all') {
     filtered = filtered.filter(p => LEAGUE_BY_CLUB[p.club] === catalogFilters.league);
@@ -35,52 +25,6 @@ function getPaginatedProducts() {
     totalPages: Math.ceil(filtered.length / ITEMS_PER_PAGE),
     currentPage
   };
-}
-
-function setupSearch() {
-  const searchInput = document.getElementById('searchInput');
-  if (!searchInput) return;
-  
-  let debounceTimer;
-  searchInput.addEventListener('input', (e) => {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      currentSearchQuery = e.target.value;
-      currentPage = 1;
-      updateResultsCount();
-      renderGrid();
-      updatePagination();
-    }, 300);
-  });
-  
-  searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      searchInput.value = '';
-      currentSearchQuery = '';
-      currentPage = 1;
-      renderGrid();
-      updatePagination();
-      updateResultsCount();
-    }
-  });
-}
-
-function updateResultsCount() {
-  const countEl = document.getElementById('searchResultsCount');
-  if (!countEl) return;
-  
-  const { total } = getPaginatedProducts();
-  let message = '';
-  
-  if (currentSearchQuery.trim().length >= 2) {
-    message = `Found ${total} result${total !== 1 ? 's' : ''} for "${escapeHtml(currentSearchQuery)}"`;
-  } else if (catalogFilters.league !== 'all' || catalogFilters.team !== 'all') {
-    message = `${total} product${total !== 1 ? 's' : ''} available`;
-  } else {
-    message = `${PRODUCTS.length} products in collection`;
-  }
-  
-  countEl.textContent = message;
 }
 
 function setupCatalogFilters() {
@@ -124,7 +68,6 @@ function setupCatalogFilters() {
     catalogFilters.team = 'all';
     currentPage = 1;
     populateTeamFilter(catalogFilters.league);
-    updateResultsCount();
     renderGrid();
     updatePagination();
   });
@@ -132,7 +75,6 @@ function setupCatalogFilters() {
   teamFilter.addEventListener('change', (e) => {
     catalogFilters.team = e.target.value;
     currentPage = 1;
-    updateResultsCount();
     renderGrid();
     updatePagination();
   });
@@ -152,14 +94,9 @@ function setupPagination() {
   nextBtn.id = 'pageNext';
   nextBtn.textContent = 'Next →';
   
-  const info = document.createElement('span');
-  info.className = 'pagination-info';
-  info.id = 'paginationInfo';
-  
   container.innerHTML = '';
   container.appendChild(prevBtn);
   container.appendChild(nextBtn);
-  container.appendChild(info);
   
   prevBtn.addEventListener('click', () => {
     if (currentPage > 1) {
@@ -185,10 +122,9 @@ function updatePagination() {
   const container = document.getElementById('pagination');
   if (!container) return;
   
-  const { total, totalPages } = getPaginatedProducts();
+  const { totalPages } = getPaginatedProducts();
   const prevBtn = document.getElementById('pagePrev');
   const nextBtn = document.getElementById('pageNext');
-  const info = document.getElementById('paginationInfo');
   
   if (totalPages <= 1) {
     container.style.display = 'none';
@@ -198,8 +134,6 @@ function updatePagination() {
   container.style.display = 'flex';
   prevBtn.disabled = currentPage <= 1;
   nextBtn.disabled = currentPage >= totalPages;
-  
-  info.textContent = `Page ${currentPage} of ${totalPages} (${total} products)`;
   
   const pagesContainer = document.getElementById('pagesContainer');
   if (pagesContainer) pagesContainer.remove();

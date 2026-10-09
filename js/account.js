@@ -11,9 +11,7 @@ const PAYMENT_PLANS = {
 };
 
 const PAYMENT_METHODS = {
-  monime: 'Monime — Mobile Money, Card or Bank',
-  orange_money: 'Orange Money',
-  afrimoney: 'Afrimoney'
+  monime: 'Monime — Mobile Money, Card or Bank'
 };
 
 window.customer = {
@@ -78,13 +76,43 @@ async function restoreServerSession() {
 
 function updateAccountButton() {
   const accountButton = document.getElementById('openAccountBtn');
-  if (accountButton) {
-    accountButton.textContent = currentAccount ? currentAccount.name.split(' ')[0] : 'Account';
+  if (!accountButton) return;
+
+  accountButton.replaceChildren();
+  const avatarUrl = getAccountAvatarUrl(currentAccount);
+  if (currentAccount && avatarUrl) {
+    const avatar = document.createElement('img');
+    avatar.className = 'account-avatar';
+    avatar.src = avatarUrl;
+    avatar.alt = '';
+    avatar.referrerPolicy = 'no-referrer';
+    accountButton.appendChild(avatar);
+    accountButton.setAttribute('aria-label', `Open ${currentAccount.name}'s profile`);
+    accountButton.title = currentAccount.name;
+    accountButton.classList.add('has-avatar');
+    return;
+  }
+
+  accountButton.classList.remove('has-avatar');
+  accountButton.removeAttribute('title');
+  accountButton.textContent = currentAccount ? currentAccount.name.split(' ')[0] : 'Account';
+  accountButton.setAttribute('aria-label', currentAccount ? `Open ${currentAccount.name}'s profile` : 'Open account');
+}
+
+function getAccountAvatarUrl(account) {
+  const value = account?.avatar_url || account?.picture;
+  if (!value) return '';
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
   }
 }
 
 function accountStepHtml() {
   if (currentAccount) {
+    const isDarkTheme = document.documentElement.dataset.theme === 'dark';
     return `
       <div class="drawer-head">
         <h3 class="display">Your Account</h3>
@@ -92,10 +120,17 @@ function accountStepHtml() {
       </div>
       <div class="account-body">
         <div class="account-status">
+          ${getAccountAvatarUrl(currentAccount) ? `<img class="account-profile-avatar" src="${escapeHtml(getAccountAvatarUrl(currentAccount))}" alt="" referrerpolicy="no-referrer">` : ''}
+          <div class="account-profile-details">
           <strong>${escapeHtml(currentAccount.name)}</strong>
           <span>${escapeHtml(currentAccount.email || currentAccount.phone || '')}</span>
+          </div>
         </div>
         <p class="account-intro">Your account keeps your details ready for faster checkout.</p>
+        <button class="theme-toggle account-theme-toggle" id="themeToggle" type="button" aria-label="Enable ${isDarkTheme ? 'light' : 'dark'} theme" aria-pressed="${isDarkTheme}">
+          <span class="theme-toggle-icon" aria-hidden="true">${isDarkTheme ? '☀' : '☾'}</span>
+          <span class="theme-toggle-label">${isDarkTheme ? 'Light' : 'Dark'}</span>
+        </button>
         <button class="ghost-btn" id="viewOrdersBtn">View Order History</button>
         <button class="primary-btn" id="logoutBtn" style="margin-top: 12px;">Log out</button>
       </div>`;

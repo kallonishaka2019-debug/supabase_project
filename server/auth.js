@@ -50,6 +50,7 @@ function registerAuthRoutes(app, { supabaseAuth, supabaseAdmin, supabaseUrl, sup
       email: authUser.email,
       name: profile.full_name,
       phone: profile.phone || "",
+      avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || "",
       is_admin: profile.role === "admin",
     };
   }

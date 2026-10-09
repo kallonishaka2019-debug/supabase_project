@@ -1,13 +1,11 @@
 document.addEventListener('DOMContentLoaded', async () => {
   setupGlobalEvents();
-  setupSearch();
   setupCatalogFilters();
   setupPagination();
   setupSizeGuide();
 
   // Show the bundled catalog immediately; the API result (slow on a cold start) only refreshes it.
   renderGrid();
-  updateResultsCount();
   updatePagination();
   updateCartCount();
   updateAccountButton();
@@ -16,7 +14,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadProductsFromApi();
 
   renderGrid();
-  updateResultsCount();
   updatePagination();
 
   await initializeCustomizer();

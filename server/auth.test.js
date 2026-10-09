@@ -154,6 +154,35 @@ test("login returns the profile and sets HTTP-only secure cookies", async (t) =>
   assert.match(cookies, /SameSite=Lax/);
 });
 
+test("Google profile photo is returned with the signed-in account", async (t) => {
+  const { baseUrl } = await startAuthServer(t, {
+    signIn: {
+      data: {
+        user: {
+          id: "user-1",
+          email: "test@example.com",
+          user_metadata: { picture: "https://example.com/avatar.png" },
+        },
+        session: {
+          access_token: "access-token",
+          refresh_token: "refresh-token",
+          expires_in: 3600,
+          user: { id: "user-1", email: "test@example.com" },
+        },
+      },
+      error: null,
+    },
+  });
+  const response = await fetch(`${baseUrl}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "test@example.com", password: "test-password" }),
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).user.avatar_url, "https://example.com/avatar.png");
+});
+
 test("protected routes reject requests without a session", async (t) => {
   const { baseUrl } = await startAuthServer(t);
   const response = await fetch(`${baseUrl}/protected`);

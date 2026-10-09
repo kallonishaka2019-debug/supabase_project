@@ -55,19 +55,6 @@
       </div>
     </section>
 
-    <div class="search-container">
-      <div class="search-bar">
-        <input
-          type="search"
-          id="searchInput"
-          placeholder="Search by team, league, or kit..."
-        />
-      </div>
-      <div class="search-results-count" id="searchResultsCount">
-        39 products in collection
-      </div>
-    </div>
-
     <section class="customizer" id="customizer">
       <div class="customizer-box">
         <div class="customizer-head">
@@ -89,7 +76,7 @@
                   <option value="Third">Third</option>
                 </select>
               </div>
-              <div class="custom-field full">
+              <div class="custom-field">
                 <label for="customName">Player name</label>
                 <input
                   id="customName"
@@ -105,15 +92,15 @@
                   id="customNumber"
                   type="text"
                   inputmode="numeric"
-                  maxlength="2"
+                  pattern="[0-9]{0,2}"
                   placeholder="e.g. 10"
                 />
               </div>
               <div class="custom-field">
-                <label for="customFont">Font</label>
+                <label for="customFont">Font style</label>
                 <select id="customFont">
                   <option value="classic">Classic</option>
-                  <option value="modern">Modern</option>
+                  <option value="modern" selected>Modern</option>
                   <option value="bold">Bold</option>
                   <option value="serif">Serif</option>
                   <option value="italic">Italic</option>
@@ -122,42 +109,17 @@
                 </select>
               </div>
               <div class="custom-field">
-                <label for="customFontSize">Font size</label>
-                <input
-                  id="customFontSize"
-                  type="range"
-                  min="14"
-                  max="72"
-                  step="1"
-                  value="36"
-                />
-                <output id="customFontSizeValue" for="customFontSize"
-                  >36px</output
-                >
-              </div>
-              <div class="custom-field">
-                <label for="customTextWidth">Text width</label>
-                <input
-                  id="customTextWidth"
-                  type="range"
-                  min="70"
-                  max="140"
-                  step="1"
-                  value="100"
-                />
-                <output id="customTextWidthValue" for="customTextWidth"
-                  >100%</output
-                >
-              </div>
-              <div class="custom-field">
-                <label for="customNameColor">Name/Number Color</label>
-                <input
-                  id="customNameColor"
-                  type="text"
-                  value=""
-                  placeholder="e.g. white"
-                  title="Enter color: hex (#fff), rgb, or color name (red, blue, etc.)"
-                />
+                <label for="customNameColor">Text color</label>
+                <select id="customNameColor">
+                  <option value="">Team default</option>
+                  <option value="#000000">Black</option>
+                  <option value="#FFFFFF">White</option>
+                  <option value="#DA291C">Red</option>
+                  <option value="#034694">Blue</option>
+                  <option value="#FDE100">Yellow</option>
+                  <option value="#FEBE10">Gold</option>
+                  <option value="#132257">Navy</option>
+                </select>
               </div>
               <div class="custom-field">
                 <label for="customSize">Size</label>
@@ -167,10 +129,6 @@
                   <option value="XL">XL</option>
                   <option value="XXL">XXL</option>
                 </select>
-              </div>
-              <div class="custom-field">
-                <label>Price</label>
-                <input type="text" value="Le 400" readonly />
               </div>
             </div>
           </div>
@@ -185,22 +143,10 @@
               <span id="previewNumber">—</span>
             </div>
             <div class="custom-summary">
-              <div class="summary-row">
-                <span>Team</span><span id="summaryTeam">Barcelona</span>
-              </div>
-              <div class="summary-row">
-                <span>Kit</span><span id="summaryKit">Home</span>
-              </div>
-              <div class="summary-row">
-                <span>Name</span><span id="summaryName">—</span>
-              </div>
-              <div class="summary-row">
-                <span>Size</span><span id="summarySize">M</span>
-              </div>
               <div class="summary-row summary-total">
                 <span>Total</span><strong id="summaryPrice">Le 400</strong>
               </div>
-              <button class="primary-btn" id="customAddBtn" type="button">
+              <button class="primary-btn custom-add-btn" id="customAddBtn" type="button">
                 Add custom jersey
               </button>
             </div>
@@ -261,50 +207,59 @@
           <button class="modal-close" id="closeSizeGuide">×</button>
         </div>
         <div class="modal-body">
-          <table class="size-guide-table">
-            <thead>
-              <tr>
-                <th>Size</th>
-                <th>Chest</th>
-                <th>Length</th>
-                <th>Recommended for</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>M</td>
-                <td>38-40 in</td>
-                <td>28 in</td>
-                <td>Most adults</td>
-              </tr>
-              <tr>
-                <td>L</td>
-                <td>40-42 in</td>
-                <td>29 in</td>
-                <td>Large build</td>
-              </tr>
-              <tr>
-                <td>XL</td>
-                <td>42-44 in</td>
-                <td>30 in</td>
-                <td>Extra large</td>
-              </tr>
-              <tr>
-                <td>XXL</td>
-                <td>44-46 in</td>
-                <td>31 in</td>
-                <td>2XL+ build</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="size-guide-table-wrap">
+            <table class="size-guide-table">
+              <thead>
+                <tr>
+                  <th>Size</th>
+                  <th>Chest around body</th>
+                  <th>Jersey width<br />(pit to pit)</th>
+                  <th>Jersey length</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>M</td>
+                  <td>38-40 in / 97-102 cm</td>
+                  <td>19-20 in / 48-51 cm</td>
+                  <td>28 in / 71 cm</td>
+                </tr>
+                <tr>
+                  <td>L</td>
+                  <td>40-42 in / 102-107 cm</td>
+                  <td>20-21 in / 51-53 cm</td>
+                  <td>29 in / 74 cm</td>
+                </tr>
+                <tr>
+                  <td>XL</td>
+                  <td>42-44 in / 107-112 cm</td>
+                  <td>21-22 in / 53-56 cm</td>
+                  <td>30 in / 76 cm</td>
+                </tr>
+                <tr>
+                  <td>XXL</td>
+                  <td>44-46 in / 112-117 cm</td>
+                  <td>22-23 in / 56-58 cm</td>
+                  <td>31 in / 79 cm</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <p class="size-guide-note">
-            All jerseys have a regular fit with slight stretch. If in doubt
-            between sizes, we recommend sizing up for a more comfortable fit.
+            Measurements are approximate and can vary by jersey style. To check
+            chest fit, wrap a tape measure around the fullest part of your chest.
+            For the closest match, lay a jersey that fits you well flat: measure
+            straight across from one armpit to the other for the width, then from
+            the highest shoulder point beside the collar to the bottom hem for
+            the length. Double the flat width to estimate the jersey chest
+            circumference. If you are between sizes or prefer a relaxed fit,
+            choose the larger size.
           </p>
         </div>
       </div>
     </div>
 
+    <script src="js/theme.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

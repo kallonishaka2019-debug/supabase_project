@@ -458,7 +458,7 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
     return response.status(400).json({ error: "At least one item is required" });
   }
   const selectedPaymentMethod = String(paymentMethod || "monime");
-  if (!["monime", "cash", "orange_money", "afrimoney"].includes(selectedPaymentMethod)) {
+  if (selectedPaymentMethod !== "monime") {
     return response.status(400).json({ error: "Invalid payment method" });
   }
 

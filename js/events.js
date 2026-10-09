@@ -201,13 +201,6 @@ function bindFormEvents() {
     });
   }
 
-  document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      window.customer.paymentMethod = e.target.value;
-      if (e.target.value !== 'monime') invalidatePendingMonimeOrder();
-      renderDrawer();
-    });
-  });
 }
 
 async function handleAccountSubmit(event) {
