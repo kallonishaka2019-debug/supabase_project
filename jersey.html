@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JerseyHub — Club Jerseys, Freetown</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&family=Barlow+Condensed:ital,wght@1,800&family=Lora:wght@400;700&family=Caveat:wght@700&family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css?v=20260924-6" />
+    <script>
+      window.API_BASE_URL = "/api";
+      window.WHATSAPP_NUMBER = "23278952429";
+      window.MONIME_RECIPIENT = "+23278952429";
+    </script>
+  </head>
+  <body>
+    <header>
+      <div class="header-inner">
+        <div class="logo">
+          <span class="display">JerseyHub</span>
+        </div>
+        <nav>
+          <a
+            href="https://wa.me/23278952429?text=Hi%20JerseyHub"
+            target="_blank"
+            rel="noopener"
+            >Contact</a
+          >
+          <button class="account-btn" id="openAccountBtn" type="button">
+            Account
+          </button>
+          <button class="cart-btn" id="openCartBtn" aria-label="Open cart">
+            Cart <span class="cart-count" id="cartCount">0</span>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="ghost-number" aria-hidden="true">10</div>
+      <div class="hero-content">
+        <span class="eyebrow">Freetown · Authentic Kits</span>
+        <h1 class="display">Wear the<br />badge you<br />bleed for.</h1>
+        <p>
+          Club jerseys for the matchday and the everyday — home, away, and third
+          kits, sourced and sized for Freetown. Order in a few taps, pick up or
+          get it delivered.
+        </p>
+        <a href="#shop" class="hero-cta">Shop the collection ↓</a>
+      </div>
+    </section>
+
+    <section class="shop" id="shop">
+      <div class="shop-head">
+        <h2 class="display">The Collection</h2>
+        <button class="ghost-btn" id="sizeGuideBtn" style="margin: 0">
+          Size Guide
+        </button>
+      </div>
+      <div class="shop-filters" aria-label="Filter jerseys">
+        <label for="leagueFilter">
+          League
+          <select id="leagueFilter">
+            <option value="all">All leagues</option>
+          </select>
+        </label>
+        <label for="teamFilter">
+          Team
+          <select id="teamFilter">
+            <option value="all">All teams</option>
+          </select>
+        </label>
+      </div>
+      <div class="grid" id="productGrid"></div>
+      <div class="pagination" id="pagination"></div>
+    </section>
+
+    <footer>
+      <div class="footer-inner">
+        <div>
+          <div class="display">JerseyHub</div>
+          <p>Freetown, Sierra Leone</p>
+          <a
+            class="footer-whatsapp"
+            href="https://wa.me/23278952429?text=Hi%20JerseyHub"
+            target="_blank"
+            rel="noopener"
+            >Chat with us on WhatsApp</a
+          >
+        </div>
+        <div>
+          <p>
+            For admin access, visit
+            <a href="admin.html" style="color: var(--pitch)">admin panel</a>
+          </p>
+        </div>
+      </div>
+    </footer>
+
+    <div class="overlay" id="overlay"></div>
+    <aside class="drawer" id="drawer" aria-label="Cart">
+      <div id="drawerContent"></div>
+    </aside>
+
+    <div class="modal-overlay" id="sizeGuideModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Size Guide</h3>
+          <button class="modal-close" id="closeSizeGuide">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="size-guide-table-wrap">
+            <table class="size-guide-table">
+              <thead>
+                <tr>
+                  <th>Size</th>
+                  <th>Chest around body</th>
+                  <th>Jersey width<br />(pit to pit)</th>
+                  <th>Jersey length</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>M</td>
+                  <td>38-40 in / 97-102 cm</td>
+                  <td>19-20 in / 48-51 cm</td>
+                  <td>28 in / 71 cm</td>
+                </tr>
+                <tr>
+                  <td>L</td>
+                  <td>40-42 in / 102-107 cm</td>
+                  <td>20-21 in / 51-53 cm</td>
+                  <td>29 in / 74 cm</td>
+                </tr>
+                <tr>
+                  <td>XL</td>
+                  <td>42-44 in / 107-112 cm</td>
+                  <td>21-22 in / 53-56 cm</td>
+                  <td>30 in / 76 cm</td>
+                </tr>
+                <tr>
+                  <td>XXL</td>
+                  <td>44-46 in / 112-117 cm</td>
+                  <td>22-23 in / 56-58 cm</td>
+                  <td>31 in / 79 cm</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="size-guide-note">
+            Measurements are approximate and can vary by jersey style. To check
+            chest fit, wrap a tape measure around the fullest part of your chest.
+            For the closest match, lay a jersey that fits you well flat: measure
+            straight across from one armpit to the other for the width, then from
+            the highest shoulder point beside the collar to the bottom hem for
+            the length. Double the flat width to estimate the jersey chest
+            circumference. If you are between sizes or prefer a relaxed fit,
+            choose the larger size.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/theme.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
