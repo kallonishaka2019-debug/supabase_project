@@ -273,6 +273,21 @@ footer {
   background: var(--ink);
   color: var(--paper);
 }
+.footer-whatsapp {
+  display: block;
+  width: fit-content;
+  margin: 24px auto 0;
+  padding: 12px 22px;
+  background: #1a8f4a;
+  color: #fff;
+  border-radius: 999px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.footer-whatsapp:hover,
+.footer-whatsapp:focus-visible {
+  background: #14703a;
+}
 @media (max-width: 640px) {
   .header-inner {
     padding: 14px 18px;
