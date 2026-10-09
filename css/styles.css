@@ -148,6 +148,14 @@ nav a {
   padding-bottom: 16px;
   margin-bottom: 32px;
 }
+.shop-head h2 {
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  font-size: clamp(34px, 6vw, 52px);
+  line-height: 1;
+}
 .card {
   background: var(--surface);
   border: 1px solid var(--line);
