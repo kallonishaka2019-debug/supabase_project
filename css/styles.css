@@ -235,14 +235,18 @@ nav a {
     transform 160ms ease;
 }
 .add-btn:not(.request-btn) {
-  background: var(--crimson);
+  background: #00685a;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
 }
 .add-btn.request-btn {
-  background: var(--pitch);
+  background: var(--pitch-dark);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
 }
 .add-btn:not(.request-btn):hover,
 .add-btn:not(.request-btn):focus-visible {
-  background: #006f60;
+  background: #004f44;
 }
 .add-btn.request-btn:hover,
 .add-btn.request-btn:focus-visible {
@@ -700,25 +704,19 @@ footer p {
   border-style: solid;
   border-color: var(--pitch);
 }
-.li-custom-toggle {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  cursor: pointer;
-  font-size: 13px;
-  line-height: 1.35;
-}
-.li-custom-toggle input {
-  flex: 0 0 18px;
-  width: 18px;
-  height: 18px;
-  margin: 1px 0 0;
-  accent-color: var(--pitch);
-}
-.li-custom-toggle strong {
-  display: block;
-  color: var(--pitch);
+.li-custom-toggle-btn {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: var(--surface);
+  color: var(--ink);
   font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.li-custom.active .li-custom-toggle-btn {
+  border-color: var(--pitch);
+  color: var(--pitch);
 }
 .li-custom-fields {
   display: grid;
@@ -1068,11 +1066,39 @@ footer p {
   cursor: pointer;
 }
 .drawer-foot .primary-btn {
-  background: var(--pitch);
+  background: var(--pitch-dark);
   transition: background 0.15s;
 }
 .drawer-foot .primary-btn:hover {
   background: var(--pitch-dark);
+}
+.mobile-cart-bar {
+  display: none;
+}
+@media (max-width: 720px) {
+  .mobile-cart-bar:not([hidden]) {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: 45;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 16px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--ink);
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+  }
+  body {
+    padding-bottom: 80px;
+  }
 }
 .summary-block {
   margin-bottom: 18px;

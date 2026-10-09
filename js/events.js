@@ -59,8 +59,12 @@ function bindDrawerEvents() {
     btn.addEventListener('click', () => removeItem(btn.dataset.remove, btn.dataset.size));
   });
   
-  document.querySelectorAll('[data-customize]').forEach(input => {
-    input.addEventListener('change', () => setItemCustomization(input.dataset.customize, input.dataset.size, input.checked));
+  document.querySelectorAll('[data-customize-toggle]').forEach(button => {
+    button.addEventListener('click', () => {
+      const currentItem = findCartItem(button.dataset.customizeToggle, button.dataset.size);
+      if (!currentItem) return;
+      setItemCustomization(button.dataset.customizeToggle, button.dataset.size, !currentItem.customized);
+    });
   });
   document.querySelectorAll('[data-custom-field]').forEach(input => {
     input.addEventListener('input', () => {
@@ -402,6 +406,8 @@ function setupGlobalEvents() {
   }
   
   const openCartBtn = document.getElementById('openCartBtn');
+  const mobileCartBar = document.getElementById('mobileCartBar');
+  if (mobileCartBar) mobileCartBar.addEventListener('click', openDrawer);
   if (openCartBtn) {
     openCartBtn.addEventListener('click', openDrawer);
   }

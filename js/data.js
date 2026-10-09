@@ -140,9 +140,10 @@ async function loadProductsFromApi() {
 function getProductAvailability(p) {
   const kit = String(p.kit);
   if (
+    (p.club === "Liverpool") ||
     ((p.club === "Barcelona" || p.club === "Real Madrid" || p.club === "Chelsea") && kit.startsWith("Third")) ||
     (p.club === "PSG" && (kit.startsWith("Home") || kit.startsWith("Away"))) ||
-    (p.club === "Bayern Munich" && kit.startsWith("Home")) ||
+    (p.club === "Bayern Munich" && (kit.startsWith("Home") || kit.startsWith("Away"))) ||
     (p.club === "Tottenham Hotspur" && kit.startsWith("Home")) ||
     (p.club === "Atletico Madrid" && (kit.startsWith("Home") || kit.startsWith("Away"))) ||
     (p.club === "Juventus" && kit.startsWith("Home"))

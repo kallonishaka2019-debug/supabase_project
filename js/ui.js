@@ -56,11 +56,11 @@ function jerseyVisual(p) {
   if (!p.image) return jerseySvg(p);
   if (p.backImage) {
     return `<span class="jersey-photo-wrap">
-      <img class="jersey-photo jersey-photo-front" src="${p.image}" alt="${p.club} ${p.kit} jersey front" loading="lazy" onerror="this.replaceWith(document.createRange().createContextualFragment(jerseySvg(PRODUCTS.find(product => product.id === ${p.id}))))">
-      <img class="jersey-photo jersey-photo-back" src="${p.backImage}" alt="${p.club} ${p.kit} jersey back" loading="lazy" onerror="this.remove()">
+      <img class="jersey-photo jersey-photo-front" src="${p.image}" alt="${p.club} ${p.kit} jersey front" loading="lazy" decoding="async" onerror="this.replaceWith(document.createRange().createContextualFragment(jerseySvg(PRODUCTS.find(product => product.id === ${p.id}))))">
+      <img class="jersey-photo jersey-photo-back" src="${p.backImage}" alt="${p.club} ${p.kit} jersey back" loading="lazy" decoding="async" onerror="this.remove()">
     </span>`;
   }
-  return `<img class="jersey-photo" src="${p.image}" alt="${p.club} ${p.kit} jersey" loading="lazy" onerror="this.replaceWith(document.createRange().createContextualFragment(jerseySvg(PRODUCTS.find(product => product.id === ${p.id}))))">`;
+  return `<img class="jersey-photo" src="${p.image}" alt="${p.club} ${p.kit} jersey" loading="lazy" decoding="async" onerror="this.replaceWith(document.createRange().createContextualFragment(jerseySvg(PRODUCTS.find(product => product.id === ${p.id}))))">`;
 }
 
 function renderGrid() {
@@ -169,15 +169,14 @@ function cartStepHtml() {
         </div>
         <div class="li-price">${CURRENCY} ${itemPrice}</div>
         <div class="li-custom ${item.customized ? 'active' : ''}">
-          <label class="li-custom-toggle">
-            <input type="checkbox" data-customize="${item.productId}" data-size="${item.size}" ${item.customized ? 'checked' : ''}>
-            <span>Customize with name &amp; number <strong>${CURRENCY} ${CUSTOM_KIT_PRICE} each</strong></span>
-          </label>
+          <button class="li-custom-toggle-btn" type="button" data-customize-toggle="${item.productId}" data-size="${item.size}">
+            ${item.customized ? 'Remove customization' : `Customize with name &amp; number (${CURRENCY} ${CUSTOM_KIT_PRICE})`}
+          </button>
           ${item.customized ? `
             <div class="li-custom-fields">
               <div class="li-custom-field">
                 <label for="customName-${item.productId}-${item.size}">Name</label>
-                <input id="customName-${item.productId}-${item.size}" type="text" maxlength="${CUSTOM_NAME_MAX_LENGTH}" placeholder="e.g. KALLON" value="${escapeHtml(item.customName)}" data-custom-field="customName" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
+                <input id="customName-${item.productId}-${item.size}" type="text" maxlength="${CUSTOM_NAME_MAX_LENGTH}" placeholder="e.g. KAMARA" value="${escapeHtml(item.customName)}" data-custom-field="customName" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
               </div>
               <div class="li-custom-field li-custom-number">
                 <label for="customNumber-${item.productId}-${item.size}">Number</label>
@@ -230,7 +229,7 @@ function detailsStepHtml() {
       
       <div class="field">
         <label for="fName">Full name</label>
-        <input id="fName" type="text" value="${window.customer?.name || ''}" placeholder="e.g. Ishaka Kallon">
+        <input id="fName" type="text" value="${window.customer?.name || ''}" placeholder="Full name">
       </div>
       <div class="field">
         <label for="fPhone">Phone</label>

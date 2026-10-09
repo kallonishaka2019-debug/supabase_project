@@ -81,6 +81,7 @@ function setItemCustomization(productId, size, enabled) {
     item.customNumber = item.customNumber ?? '';
   }
   persistCart();
+  updateCartCount();
   renderDrawer();
 }
 
@@ -148,6 +149,12 @@ function grandTotal() {
 }
 
 function updateCartCount() {
+  const bar = document.getElementById('mobileCartBar');
+  const info = document.getElementById('mobileCartInfo');
+  if (bar && info) {
+    bar.hidden = cartItemCount() === 0;
+    info.textContent = `${cartItemCount()} item${cartItemCount() === 1 ? '' : 's'} · ${CURRENCY} ${cartTotal()}`;
+  }
   const countEl = document.getElementById('cartCount');
   if (countEl) {
     countEl.textContent = cartItemCount();
