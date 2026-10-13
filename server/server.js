@@ -399,7 +399,7 @@ app.post("/api/payments/create", async (request, response) => {
   }
 });
 
-app.get("/api/payments/return", async (request, response) => {
+app.all("/api/payments/return", async (request, response) => {
   const orderId = Number(request.query.orderId);
   const outcome = request.query.outcome === "cancelled" ? "cancelled" : "success";
   const resultUrl = new URL("/jersey.html", appBaseUrl);
