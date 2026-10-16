@@ -509,6 +509,7 @@
               <th>Customer</th>
               <th>Items</th>
               <th>Total</th>
+              <th>Delivery</th>
               <th>Status</th>
               <th>Date</th>
             </tr>
@@ -782,6 +783,16 @@
         await loadDashboard();
       }
 
+      function deliverySummary(order) {
+        const address =
+          typeof order.delivery_address === "string"
+            ? order.delivery_address.trim()
+            : "";
+        if (order.delivery_method !== "delivery" && !address) return "Pickup";
+        if (!address) return "<strong>Delivery</strong> – no address provided";
+        return `<strong>Delivery</strong><br><span style="white-space:pre-line">${escapeHtml(address)}</span>`;
+      }
+
       function escapeHtml(value) {
         const div = document.createElement("div");
         div.textContent = String(value ?? "");
@@ -943,11 +954,7 @@
               <td>#${order.id}</td>
               <td>${escapeHtml(order.user_name || order.customer_name)}</td>
               <td>${escapeHtml(order.user_phone || order.customer_phone)}</td>
-              <td>${
-                order.delivery_method === "delivery"
-                  ? `<strong>Delivery</strong><br><span style="white-space:pre-line">${escapeHtml(order.delivery_address || "")}</span>`
-                  : "Pickup"
-              }</td>
+              <td>${deliverySummary(order)}</td>
               <td>${orderItemsSummary(order.items)}</td>
               <td>Le ${Number(order.total).toLocaleString()}</td>
               <td>${paymentSummary(order)}</td>
@@ -1094,15 +1101,16 @@
                 <td>${escapeHtml(order.customer_name)}</td>
                 <td>${orderItemsSummary(order.items)}</td>
                 <td>Le ${Number(order.total).toLocaleString()}</td>
+                <td>${deliverySummary(order)}</td>
                 <td><span class="badge badge-${order.status}">${escapeHtml(order.status)}</span></td>
                 <td>${new Date(order.created_at).toLocaleDateString()}</td>
               </tr>`,
                 )
                 .join("")
-            : '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">No orders yet</td></tr>';
+            : '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">No orders yet</td></tr>';
         } catch {
           document.getElementById("recentOrdersBody").innerHTML =
-            '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">Could not load stats. Is the server running?</td></tr>';
+            '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">Could not load stats. Is the server running?</td></tr>';
         }
       }
 
