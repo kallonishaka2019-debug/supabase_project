@@ -510,6 +510,7 @@
               <th>Items</th>
               <th>Total</th>
               <th>Status</th>
+              <th>Delivery</th>
               <th>Date</th>
             </tr>
           </thead>
@@ -1088,14 +1089,19 @@
                 <td>${orderItemsSummary(order.items)}</td>
                 <td>Le ${Number(order.total).toLocaleString()}</td>
                 <td><span class="badge badge-${order.status}">${escapeHtml(order.status)}</span></td>
+                <td>${
+                  order.delivery_method === "delivery"
+                    ? `<strong>Delivery</strong><br>${escapeHtml(order.delivery_address || "No address provided")}`
+                    : "Pickup"
+                }</td>
                 <td>${new Date(order.created_at).toLocaleDateString()}</td>
               </tr>`,
                 )
                 .join("")
-            : '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">No orders yet</td></tr>';
+            : '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">No orders yet</td></tr>';
         } catch {
           document.getElementById("recentOrdersBody").innerHTML =
-            '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">Could not load stats. Is the server running?</td></tr>';
+            '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">Could not load stats. Is the server running?</td></tr>';
         }
       }
 
