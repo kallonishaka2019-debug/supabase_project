@@ -86,7 +86,7 @@ function bindDrawerEvents() {
           const item = findCartItem(input.dataset.customId, input.dataset.size);
           if (item && incomplete.includes(item) && !String(input.value).trim()) input.classList.add('invalid');
         });
-        showError('Enter a name and number for each customized jersey');
+        showError('Enter a name or number (or both) for each customized jersey');
         return;
       }
       checkoutStep = 'details';

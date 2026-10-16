@@ -16,6 +16,7 @@
       "headers": { "cache-control": "public, max-age=604800, stale-while-revalidate=86400" },
       "continue": true
     },
+    { "src": "/admin-Wjhx5dMzJvDF", "dest": "/admin.html" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/jersey.html" }
   ],

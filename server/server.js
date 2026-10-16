@@ -511,7 +511,10 @@ app.post("/api/orders", ensureSupabase, optionalAuth, async (request, response) 
       !Number.isSafeInteger(item.unitPrice) || item.unitPrice < 0 ||
       item.club.length < 2 || item.kit.length < 2 ||
       !catalog.some((product) => String(product.id) === String(item.productId)) ||
-      (item.custom && (!/^[A-Za-z0-9 .'-]{1,12}$/.test(item.customName) || !/^\d{1,2}$/.test(item.customNumber))),
+      (item.custom && (
+        (!item.customName && !item.customNumber) ||
+        (item.customName && !/^[A-Za-z0-9 .'-]{1,12}$/.test(item.customName)) ||
+        (item.customNumber && !/^\d{1,2}$/.test(item.customNumber)))),
   );
   if (invalidItem) return response.status(400).json({ error: "Order contains invalid items" });
 
@@ -662,6 +665,9 @@ app.get("/api/admin/stats", ensureSupabase, requireAdmin, async (request, respon
   });
 });
 
+// Private admin URL: set ADMIN_PATH in the environment to change it.
+const adminPath = `/${String(process.env.ADMIN_PATH || "admin-Wjhx5dMzJvDF").replace(/^\/+/, "")}`;
+app.get(adminPath, (request, response) => response.sendFile(path.join(__dirname, "..", "admin.html")));
 app.use(express.static(path.join(__dirname, "..")));
 
 productSeedPromise = seedProductsIfEmpty();

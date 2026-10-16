@@ -27,7 +27,7 @@ function receiptData(order) {
       quantity,
       unitPrice,
       lineTotal: quantity * unitPrice,
-      custom: item.custom ? `${customName ?? ""} #${customNumber ?? ""}`.trim() : "",
+      custom: item.custom ? [customName, customNumber ? `#${customNumber}` : ""].filter(Boolean).join(" ") : "",
     };
   });
   const total = Number(order.total) || 0;

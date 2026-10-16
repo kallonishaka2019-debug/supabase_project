@@ -170,16 +170,16 @@ function cartStepHtml() {
         <div class="li-price">${CURRENCY} ${itemPrice}</div>
         <div class="li-custom ${item.customized ? 'active' : ''}">
           <button class="li-custom-toggle-btn" type="button" data-customize-toggle="${item.productId}" data-size="${item.size}">
-            ${item.customized ? 'Remove customization' : `Customize with name &amp; number (${CURRENCY} ${CUSTOM_KIT_PRICE})`}
+            ${item.customized ? 'Remove customization' : `Customize with name and/or number (${CURRENCY} ${CUSTOM_KIT_PRICE})`}
           </button>
           ${item.customized ? `
             <div class="li-custom-fields">
               <div class="li-custom-field">
-                <label for="customName-${item.productId}-${item.size}">Name</label>
+                <label for="customName-${item.productId}-${item.size}">Name (optional)</label>
                 <input id="customName-${item.productId}-${item.size}" type="text" maxlength="${CUSTOM_NAME_MAX_LENGTH}" placeholder="e.g. KAMARA" value="${escapeHtml(item.customName)}" data-custom-field="customName" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
               </div>
               <div class="li-custom-field li-custom-number">
-                <label for="customNumber-${item.productId}-${item.size}">Number</label>
+                <label for="customNumber-${item.productId}-${item.size}">Number (optional)</label>
                 <input id="customNumber-${item.productId}-${item.size}" type="text" inputmode="numeric" maxlength="2" placeholder="0-99" value="${escapeHtml(item.customNumber)}" data-custom-field="customNumber" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
               </div>
             </div>
@@ -280,7 +280,7 @@ function confirmStepHtml() {
         <div class="summary-block">
           ${cart.map(item => {
             const p = getCartProduct(item);
-            const label = item.customized ? `${p.club} · ${item.customName} #${item.customNumber}` : `${p.club}`;
+            const label = item.customized ? `${p.club} · ${customizationLabel(item)}` : `${p.club}`;
             return `<div class="li-row"><span>${label} (${item.size}) ×${item.qty}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
           }).join('')}
           <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
@@ -306,7 +306,7 @@ function confirmStepHtml() {
       <div class="summary-block">
         ${cart.map(item => {
           const p = getCartProduct(item);
-          const label = item.customized ? `${p.club} · ${item.customName} #${item.customNumber}` : `${p.club}`;
+          const label = item.customized ? `${p.club} · ${customizationLabel(item)}` : `${p.club}`;
           return `<div class="li-row"><span>${label} (${item.size}) ×${item.qty}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
         }).join('')}
         <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
