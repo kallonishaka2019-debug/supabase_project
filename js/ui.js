@@ -236,6 +236,10 @@ function detailsStepHtml() {
         <input id="fPhone" type="tel" value="${window.customer?.phone || ''}" placeholder="e.g. 076 000 000">
       </div>
       <div class="field">
+        <label for="fEmail">Email (for your receipt)</label>
+        <input id="fEmail" type="email" value="${escapeHtml(window.customer?.email || currentAccount?.email || '')}" placeholder="you@example.com">
+      </div>
+      <div class="field">
         <label>Delivery method</label>
         <div class="radio-row payment-row">
           ${deliveryOptionsHtml}

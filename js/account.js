@@ -17,6 +17,7 @@ const PAYMENT_METHODS = {
 window.customer = {
   name: '',
   phone: '',
+  email: '',
   address: '',
   delivery: 'pickup',
   deliveryTier: 'standard',
@@ -205,10 +206,12 @@ function renderOrderHistory(container, orders) {
               <span>${CURRENCY} ${(item.unitPrice ?? item.unit_price) * item.quantity}</span>
             </div>
           `).join('')}
+          ${order.delivery_method === 'delivery' && order.delivery_address ? `<div class="order-item"><span>Deliver to: ${escapeHtml(order.delivery_address)}</span></div>` : ''}
           <div class="order-total">
             <span>Total</span>
             <span>${CURRENCY} ${order.total}</span>
           </div>
+          ${['confirmed', 'fulfilled'].includes(order.status) ? `<a class="ghost-btn" href="${API_BASE}/orders/${encodeURIComponent(order.id)}/invoice" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:8px;">View invoice</a>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -237,6 +240,7 @@ async function saveCheckoutOrder() {
   const payload = {
     customerName: window.customer.name.trim(),
     customerPhone: window.customer.phone.trim(),
+    customerEmail: (currentAccount?.email || window.customer.email || '').trim(),
     deliveryMethod: window.customer.delivery === 'pickup' ? 'pickup' : window.customer.deliveryTier,
     deliveryAddress: window.customer.delivery !== 'pickup' ? window.customer.address.trim() : '',
     paymentMethod: window.customer.paymentMethod,

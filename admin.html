@@ -564,6 +564,7 @@
               <th>Order #</th>
               <th>Customer</th>
               <th>Phone</th>
+              <th>Delivery</th>
               <th>Items</th>
               <th>Total</th>
               <th>Payment</th>
@@ -914,7 +915,7 @@
         const items = (order.items || [])
           .map((item) => `${item.club} ${item.kit || ""} ${item.customName || ""} ${item.customNumber || ""}`)
           .join(" ");
-        return `${order.id} ${order.user_name || order.customer_name} ${order.user_phone || order.customer_phone} ${items}`.toLowerCase();
+        return `${order.id} ${order.user_name || order.customer_name} ${order.user_phone || order.customer_phone} ${order.delivery_address || ""} ${items}`.toLowerCase();
       }
 
       function filteredOrders() {
@@ -942,6 +943,11 @@
               <td>#${order.id}</td>
               <td>${escapeHtml(order.user_name || order.customer_name)}</td>
               <td>${escapeHtml(order.user_phone || order.customer_phone)}</td>
+              <td>${
+                order.delivery_method === "delivery"
+                  ? `<strong>Delivery</strong><br><span style="white-space:pre-line">${escapeHtml(order.delivery_address || "")}</span>`
+                  : "Pickup"
+              }</td>
               <td>${orderItemsSummary(order.items)}</td>
               <td>Le ${Number(order.total).toLocaleString()}</td>
               <td>${paymentSummary(order)}</td>
@@ -954,12 +960,13 @@
                   <option value="fulfilled" ${order.status === "fulfilled" ? "selected" : ""}>Fulfilled (delivered)</option>
                   <option value="cancelled" ${order.status === "cancelled" ? "selected" : ""}>Cancelled</option>
                 </select>
+                ${["confirmed", "fulfilled"].includes(order.status) ? `<a class="admin-btn small" href="${window.API_BASE_URL}/orders/${encodeURIComponent(order.id)}/invoice" target="_blank" rel="noopener">Invoice</a>` : ""}
                 <button class="admin-btn small danger" type="button" onclick="deleteOrder(${order.id})">Delete</button>
               </td>
             </tr>`,
               )
               .join("")
-          : '<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">No orders found</td></tr>';
+          : '<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);">No orders found</td></tr>';
         renderPager(document.getElementById("orderPager"), orderPage, totalPages, (page) => {
           orderPage = page;
           renderOrders();
@@ -1102,7 +1109,7 @@
       async function loadOrders() {
         const tbody = document.getElementById("ordersBody");
         tbody.innerHTML =
-          '<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">Loading...</td></tr>';
+          '<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);">Loading...</td></tr>';
         try {
           const response = await fetch(`${window.API_BASE_URL}/admin/orders`, {
             credentials: "include",
@@ -1113,7 +1120,7 @@
           renderOrders();
         } catch {
           tbody.innerHTML =
-            '<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">Could not load orders. Is the server running?</td></tr>';
+            '<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);">Could not load orders. Is the server running?</td></tr>';
         }
       }
 

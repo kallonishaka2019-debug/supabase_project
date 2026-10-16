@@ -5,6 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { createClient } = require("@supabase/supabase-js");
 const { registerAuthRoutes } = require("./auth");
+const { buildReceiptHtml, sendReceiptEmail } = require("./receipt");
 const fs = require("fs");
 require("dotenv").config();
 
@@ -171,12 +172,7 @@ app.post("/api/webhooks/monime", express.raw({ type: "*/*", limit: "100kb" }), a
       return response.status(200).json({ received: true });
     }
 
-    const { error: updateError } = await supabaseAdmin
-      .from("orders")
-      .update({ status: "confirmed" })
-      .eq("id", order.id)
-      .eq("status", "pending");
-    if (updateError) throw updateError;
+    await confirmOrder(order.id);
     return response.status(200).json({ received: true });
   } catch (error) {
     console.error("Monime webhook processing failed:", error.message);
@@ -187,7 +183,7 @@ app.post("/api/webhooks/monime", express.raw({ type: "*/*", limit: "100kb" }), a
 app.use(express.json({ limit: "100kb" }));
 app.use(cookieParser());
 
-const { ensureSupabase, requireAuth, requireAdmin } = registerAuthRoutes(app, {
+const { ensureSupabase, requireAuth, requireAdmin, optionalAuth } = registerAuthRoutes(app, {
   supabaseAuth,
   supabaseAdmin,
   supabaseUrl,
@@ -195,6 +191,44 @@ const { ensureSupabase, requireAuth, requireAdmin } = registerAuthRoutes(app, {
   appBaseUrl,
   nodeEnv: process.env.NODE_ENV,
 });
+
+// Atomically confirms a pending order, then sends the receipt once. Receipt problems never fail confirmation.
+async function confirmOrder(orderId) {
+  const { error: updateError } = await supabaseAdmin
+    .from("orders")
+    .update({ status: "confirmed" })
+    .eq("id", orderId)
+    .eq("status", "pending");
+  if (updateError) throw updateError;
+
+  try {
+    const { data: order, error } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).maybeSingle();
+    if (error) throw error;
+    if (!order || order.status !== "confirmed" || order.receipt_sent_at || !order.customer_email) return;
+
+    // Claim the send first so concurrent webhook/return calls cannot both email the customer.
+    const { data: claimed, error: claimError } = await supabaseAdmin
+      .from("orders")
+      .update({ receipt_sent_at: new Date().toISOString() })
+      .eq("id", orderId)
+      .is("receipt_sent_at", null)
+      .select("id");
+    if (claimError) throw claimError;
+    if (!claimed?.length) return;
+
+    const sent = await sendReceiptEmail(order);
+    if (!sent) {
+      await supabaseAdmin.from("orders").update({ receipt_sent_at: null }).eq("id", orderId);
+    }
+  } catch (error) {
+    console.error("Receipt processing failed for order", orderId, error?.message || error);
+    try {
+      await supabaseAdmin.from("orders").update({ receipt_sent_at: null }).eq("id", orderId);
+    } catch {
+      // ignore
+    }
+  }
+}
 
 function getMonimeResult(data = {}) {
   return data?.result || data?.data || data;
@@ -296,12 +330,7 @@ app.post("/api/payments/create", async (request, response) => {
         return response.status(502).json({ error: "The saved Monime session does not match this order." });
       }
       if (String(existingSession?.status || "").toLowerCase() === "completed") {
-        const { error: updateError } = await supabaseAdmin
-          .from("orders")
-          .update({ status: "confirmed" })
-          .eq("id", order.id)
-          .eq("status", "pending");
-        if (updateError) throw updateError;
+        await confirmOrder(order.id);
         return response.status(409).json({ error: "This order has already been paid." });
       }
       if (String(existingSession?.status || "").toLowerCase() === "pending") {
@@ -435,12 +464,7 @@ app.get("/api/payments/return", async (request, response) => {
     }
 
     if (String(session?.status || "").toLowerCase() === "completed") {
-      const { error: updateError } = await supabaseAdmin
-        .from("orders")
-        .update({ status: "confirmed" })
-        .eq("id", order.id)
-        .eq("status", "pending");
-      if (updateError) throw updateError;
+      await confirmOrder(order.id);
       resultUrl.searchParams.set("payment", "success");
     } else if (outcome === "cancelled") {
       resultUrl.searchParams.set("payment", "cancelled");
@@ -452,7 +476,7 @@ app.get("/api/payments/return", async (request, response) => {
   return response.redirect(303, resultUrl.toString());
 });
 
-app.post("/api/orders", ensureSupabase, async (request, response) => {
+app.post("/api/orders", ensureSupabase, optionalAuth, async (request, response) => {
   const { items, deliveryMethod, paymentMethod, paymentPlan, deliveryAddress = "", address = "", note = "" } = request.body || {};
   if (!Array.isArray(items) || items.length === 0) {
     return response.status(400).json({ error: "At least one item is required" });
@@ -510,6 +534,12 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
   const customerName = String(request.body.customerName || request.user?.name || "").trim();
   const customerPhone = String(request.body.customerPhone || request.user?.phone || "").trim();
 
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const submittedEmail = String(request.body.customerEmail || "").trim().toLowerCase();
+  const customerEmail = request.user?.email
+    ? String(request.user.email).trim().toLowerCase()
+    : (emailPattern.test(submittedEmail) ? submittedEmail : null);
+
   if (!customerName || !customerPhone) {
     return response.status(400).json({ error: "Customer name and phone are required" });
   }
@@ -520,6 +550,7 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
       user_id: request.user?.id ?? null,
       customer_name: customerName,
       customer_phone: customerPhone,
+      customer_email: customerEmail,
       total,
       delivery_method: selectedDelivery === "pickup" ? "pickup" : "delivery",
       delivery_address: String(finalDeliveryAddress || ""),
@@ -552,6 +583,19 @@ app.get("/api/orders", ensureSupabase, requireAuth, async (request, response) =>
   response.json({ orders: orders || [] });
 });
 
+app.get("/api/orders/:id/invoice", ensureSupabase, requireAuth, async (request, response) => {
+  const orderId = Number(request.params.id);
+  if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(404).send("Order not found.");
+  const { data: order, error } = await supabaseAdmin.from("orders").select("*").eq("id", orderId).maybeSingle();
+  if (error) return response.status(500).send("Failed to load invoice.");
+  if (!order) return response.status(404).send("Order not found.");
+  if (order.user_id !== request.user.id && !request.user.is_admin) return response.status(403).send("Forbidden.");
+  if (!["confirmed", "fulfilled"].includes(order.status)) return response.status(404).send("Invoice not available.");
+  response.set("Content-Type", "text/html; charset=utf-8");
+  response.set("Cache-Control", "private, no-store");
+  response.send(buildReceiptHtml(order));
+});
+
 app.get("/api/admin/orders", ensureSupabase, requireAdmin, async (request, response) => {
   const { data: orders, error } = await supabaseAdmin
     .from("orders")
@@ -582,6 +626,7 @@ app.patch("/api/admin/orders/:id", ensureSupabase, requireAdmin, async (request,
   }
   const { error } = await supabaseAdmin.from("orders").update({ status }).eq("id", request.params.id);
   if (error) return response.status(500).json({ error: "Failed to update order" });
+  if (status === "confirmed") await confirmOrder(request.params.id).catch((err) => console.error("Order confirmation follow-up failed:", err?.message || err));
   response.json({ success: true });
 });
 

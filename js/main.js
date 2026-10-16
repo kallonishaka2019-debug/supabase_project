@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (paymentParam) {
     if (paymentParam === 'success') {
       clearCart();
-      showSuccess('Payment confirmed! Your order has been placed.');
+      showSuccess('Payment confirmed. A receipt has been sent to your email.');
     } else if (paymentParam === 'cancelled') {
       showInfo('Payment was cancelled. Your order is still pending.');
     } else {
