@@ -95,8 +95,14 @@ function updateItemCustomization(productId, size, field, value) {
   return cleaned;
 }
 
+function customizationLabel(item) {
+  const name = String(item.customName || '').trim();
+  const number = String(item.customNumber ?? '');
+  return [name, number !== '' ? `#${number}` : ''].filter(Boolean).join(' ');
+}
+
 function isItemCustomizationComplete(item) {
-  return !item.customized || (Boolean(String(item.customName || '').trim()) && String(item.customNumber ?? '') !== '');
+  return !item.customized || Boolean(String(item.customName || '').trim()) || String(item.customNumber ?? '') !== '';
 }
 
 function updateQty(productId, size, delta) {

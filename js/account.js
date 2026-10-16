@@ -17,6 +17,7 @@ const PAYMENT_METHODS = {
 window.customer = {
   name: '',
   phone: '',
+  email: '',
   address: '',
   delivery: 'pickup',
   deliveryTier: 'standard',
@@ -201,14 +202,16 @@ function renderOrderHistory(container, orders) {
         <div class="order-card-body">
           ${items.map(item => `
             <div class="order-item">
-              <span>${escapeHtml(item.club)} ${item.kit ? `(${escapeHtml(item.kit)})` : ''} - Size ${escapeHtml(item.size)} × ${item.quantity}${item.custom ? ` · ${escapeHtml(item.customName ?? item.custom_name)} #${escapeHtml(item.customNumber ?? item.custom_number)}` : ''}</span>
+              <span>${escapeHtml(item.club)} ${item.kit ? `(${escapeHtml(item.kit)})` : ''} - Size ${escapeHtml(item.size)} × ${item.quantity}${item.custom ? ` · ${escapeHtml([item.customName ?? item.custom_name, (item.customNumber ?? item.custom_number) ? '#' + (item.customNumber ?? item.custom_number) : ''].filter(Boolean).join(' '))}` : ''}</span>
               <span>${CURRENCY} ${(item.unitPrice ?? item.unit_price) * item.quantity}</span>
             </div>
           `).join('')}
+          ${order.delivery_method === 'delivery' && order.delivery_address ? `<div class="order-item"><span>Deliver to: ${escapeHtml(order.delivery_address)}</span></div>` : ''}
           <div class="order-total">
             <span>Total</span>
             <span>${CURRENCY} ${order.total}</span>
           </div>
+          ${['confirmed', 'fulfilled'].includes(order.status) ? `<a class="ghost-btn" href="${API_BASE}/orders/${encodeURIComponent(order.id)}/invoice" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:8px;">View invoice</a>` : ''}
         </div>
       </div>`;
   }).join('');
@@ -229,14 +232,15 @@ async function saveCheckoutOrder() {
       quantity: item.qty,
       unit_price: product.price,
       custom: Boolean(item.customized),
-      custom_name: item.customized ? String(item.customName).trim() : null,
-      custom_number: item.customized ? String(item.customNumber) : null
+      custom_name: item.customized ? String(item.customName || '').trim() : null,
+      custom_number: item.customized ? String(item.customNumber ?? '') : null
     };
   });
 
   const payload = {
     customerName: window.customer.name.trim(),
     customerPhone: window.customer.phone.trim(),
+    customerEmail: (currentAccount?.email || window.customer.email || '').trim(),
     deliveryMethod: window.customer.delivery === 'pickup' ? 'pickup' : window.customer.deliveryTier,
     deliveryAddress: window.customer.delivery !== 'pickup' ? window.customer.address.trim() : '',
     paymentMethod: window.customer.paymentMethod,

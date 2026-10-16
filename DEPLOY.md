@@ -24,7 +24,7 @@ npx vercel
 - `MONIME_SPACE_ID`: Your Monime Space ID (starts with `spc-`)
 - `APP_BASE_URL`: Your deployed HTTPS URL, such as `https://your-project.vercel.app`
 
-Keep the Monime access token in Vercel's server environment; never add it to browser code or commit it. Run `supabase/migrate_monime_checkout.sql` in the Supabase SQL Editor if the `orders` table already exists (new databases receive this column from `supabase/schema.sql`).
+Keep the Monime access token in Vercel's server environment; never add it to browser code or commit it. Run `supabase/migrate_order_receipts.sql` as well to enable purchase receipts, and set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` and `MAIL_FROM` in the server environment. Run `supabase/migrate_monime_checkout.sql` in the Supabase SQL Editor if the `orders` table already exists (new databases receive this column from `supabase/schema.sql`).
 
 At checkout, customers are sent in the same tab to Monime's secure hosted payment page, then returned to JerseyHub. The server checks the Monime session before confirming the order.
 

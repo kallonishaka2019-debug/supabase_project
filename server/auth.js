@@ -99,6 +99,19 @@ function registerAuthRoutes(app, { supabaseAuth, supabaseAdmin, supabaseUrl, sup
     }
   }
 
+  // Populates request.user when a valid session exists; guests continue without one.
+  async function optionalAuth(request, response, next) {
+    if (!supabaseAuth || !supabaseAdmin || (!request.cookies?.sb_access_token && !request.cookies?.sb_refresh_token)) {
+      return next();
+    }
+    const guestResponse = {
+      cookie: (...args) => response.cookie(...args),
+      clearCookie: (...args) => response.clearCookie(...args),
+      status: () => ({ json: () => next() }),
+    };
+    return requireAuth(request, guestResponse, next);
+  }
+
   async function requireAdmin(request, response, next) {
     return requireAuth(request, response, () => {
       if (!request.user?.is_admin) {
@@ -289,7 +302,7 @@ function registerAuthRoutes(app, { supabaseAuth, supabaseAdmin, supabaseUrl, sup
     return response.status(204).end();
   });
 
-  return { ensureSupabase, requireAuth, requireAdmin };
+  return { ensureSupabase, requireAuth, requireAdmin, optionalAuth };
 }
 
 module.exports = { registerAuthRoutes };

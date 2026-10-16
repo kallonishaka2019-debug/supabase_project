@@ -17,6 +17,8 @@ create table if not exists public.orders (
   user_id uuid references auth.users(id) on delete restrict,
   customer_name text not null,
   customer_phone text not null,
+  customer_email text,
+  receipt_sent_at timestamptz,
   delivery_method text not null check (delivery_method in ('pickup', 'delivery')),
   delivery_address text,
   payment_method text not null check (payment_method in ('monime', 'cash', 'orange_money', 'afrimoney')),

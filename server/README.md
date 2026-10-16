@@ -5,7 +5,7 @@
 1. Open a terminal in `server/`.
 2. Run `npm install`.
 3. Copy `.env.example` to `.env` and set the Supabase variables. Use the publishable key for `SUPABASE_PUBLISHABLE_KEY` and the server-only secret key for `SUPABASE_SECRET_KEY`.
-4. For an existing database, run `supabase/migrate_products.sql`, `supabase/migrate_auth_security.sql`, and `supabase/migrate_monime_checkout.sql` in the Supabase SQL Editor. For a brand-new database, run `supabase/schema.sql`. The server seeds the products table automatically on the next start when it is empty.
+4. For an existing database, run `supabase/migrate_products.sql`, `supabase/migrate_auth_security.sql`, `supabase/migrate_monime_checkout.sql`, and `supabase/migrate_order_receipts.sql` (adds `customer_email` and `receipt_sent_at` for purchase receipts) in the Supabase SQL Editor. For a brand-new database, run `supabase/schema.sql`. The server seeds the products table automatically on the next start when it is empty.
 5. Run `npm start`.
 6. Open `http://localhost:3000/jersey.html` or `http://localhost:3000/admin.html`.
 

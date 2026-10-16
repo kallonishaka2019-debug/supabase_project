@@ -97,6 +97,12 @@ function validateCheckoutForm() {
     isValid = false;
   }
   
+  const email = document.getElementById('fEmail')?.value?.trim();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setFieldError('fEmail', 'Please enter a valid email address');
+    isValid = false;
+  }
+
   const address = document.getElementById('fAddress')?.value?.trim();
   const delivery = window.customer?.delivery;
   if (delivery === 'delivery' && !address) {
