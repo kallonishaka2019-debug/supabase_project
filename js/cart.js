@@ -59,11 +59,56 @@ function addToCart(productId, size) {
 }
 
 function sanitizeCustomName(value) {
-  return String(value || '').replace(/[^A-Za-z0-9 .'-]/g, '').slice(0, CUSTOM_NAME_MAX_LENGTH);
+  return String(value || '').replace(/[^A-Za-z .'-]/g, '').slice(0, CUSTOM_NAME_MAX_LENGTH);
 }
 
 function sanitizeCustomNumber(value) {
-  return String(value || '').replace(/\D/g, '').slice(0, 2);
+  return String(value || '').replace(/\D/g, '').slice(0, CUSTOM_NUMBER_MAX_LENGTH);
+}
+
+function customMode(item) {
+  return ['name', 'number'].includes(item?.customMode) ? item.customMode : 'both';
+}
+
+function customizationParts(name, number) {
+  return {
+    letters: (String(name || '').match(/[A-Za-z]/g) || []).length,
+    digits: (String(number ?? '').match(/\d/g) || []).length
+  };
+}
+
+function customizationFee(name, number) {
+  const { letters, digits } = customizationParts(name, number);
+  return letters * CUSTOM_PRICE_PER_LETTER + digits * CUSTOM_PRICE_PER_DIGIT;
+}
+
+function itemCustomizationFee(item) {
+  if (!item?.customized) return 0;
+  const mode = customMode(item);
+  return customizationFee(mode === 'number' ? '' : item.customName, mode === 'name' ? '' : item.customNumber);
+}
+
+function customizationBreakdownText(item) {
+  const mode = customMode(item);
+  const parts = [];
+  if (mode !== 'number') {
+    const { letters } = customizationParts(item.customName, '');
+    parts.push(`Name: ${letters} ${letters === 1 ? 'letter' : 'letters'} × ${CURRENCY} ${CUSTOM_PRICE_PER_LETTER} = ${CURRENCY} ${letters * CUSTOM_PRICE_PER_LETTER}`);
+  }
+  if (mode !== 'name') {
+    const { digits } = customizationParts('', item.customNumber);
+    parts.push(`Number: ${digits} ${digits === 1 ? 'digit' : 'digits'} × ${CURRENCY} ${CUSTOM_PRICE_PER_DIGIT} = ${CURRENCY} ${digits * CUSTOM_PRICE_PER_DIGIT}`);
+  }
+  parts.push(`Customization: ${CURRENCY} ${itemCustomizationFee(item)}`);
+  return parts.join(' · ');
+}
+
+function customizationLabel(item) {
+  if (!item?.customized) return '';
+  const mode = customMode(item);
+  const name = mode === 'number' ? '' : String(item.customName || '').trim();
+  const number = mode === 'name' ? '' : String(item.customNumber ?? '').trim();
+  return [name, number ? `#${number}` : ''].filter(Boolean).join(' ');
 }
 
 function findCartItem(productId, size) {
@@ -79,9 +124,21 @@ function setItemCustomization(productId, size, enabled) {
   if (enabled) {
     item.customName = item.customName || '';
     item.customNumber = item.customNumber ?? '';
+    item.customMode = customMode(item);
   }
   persistCart();
   updateCartCount();
+  renderDrawer();
+}
+
+function setItemCustomMode(productId, size, mode) {
+  const item = findCartItem(productId, size);
+  if (!item || !['name', 'number', 'both'].includes(mode)) return;
+  invalidatePendingMonimeOrder();
+  item.customMode = mode;
+  if (mode === 'name') item.customNumber = '';
+  if (mode === 'number') item.customName = '';
+  persistCart();
   renderDrawer();
 }
 
@@ -96,7 +153,13 @@ function updateItemCustomization(productId, size, field, value) {
 }
 
 function isItemCustomizationComplete(item) {
-  return !item.customized || (Boolean(String(item.customName || '').trim()) && String(item.customNumber ?? '') !== '');
+  if (!item.customized) return true;
+  const hasName = Boolean(String(item.customName || '').trim());
+  const hasNumber = String(item.customNumber ?? '').trim() !== '';
+  const mode = customMode(item);
+  if (mode === 'name') return hasName;
+  if (mode === 'number') return hasNumber;
+  return hasName && hasNumber;
 }
 
 function updateQty(productId, size, delta) {
@@ -162,7 +225,7 @@ function updateCartCount() {
 function getCartProduct(item) {
   const product = PRODUCTS.find(candidate => candidate.id === item.productId);
   if (!product) return null;
-  return item.customized ? { ...product, price: CUSTOM_KIT_PRICE } : product;
+  return item.customized ? { ...product, price: Number(product.price) + itemCustomizationFee(item) } : product;
 }
 
 function clearCart() {

@@ -201,7 +201,7 @@ function renderOrderHistory(container, orders) {
         <div class="order-card-body">
           ${items.map(item => `
             <div class="order-item">
-              <span>${escapeHtml(item.club)} ${item.kit ? `(${escapeHtml(item.kit)})` : ''} - Size ${escapeHtml(item.size)} × ${item.quantity}${item.custom ? ` · ${escapeHtml(item.customName ?? item.custom_name)} #${escapeHtml(item.customNumber ?? item.custom_number)}` : ''}</span>
+              <span>${escapeHtml(item.club)} ${item.kit ? `(${escapeHtml(item.kit)})` : ''} - Size ${escapeHtml(item.size)} × ${item.quantity}${item.custom ? ` · ${escapeHtml(orderItemCustomLabel(item))}` : ''}</span>
               <span>${CURRENCY} ${(item.unitPrice ?? item.unit_price) * item.quantity}</span>
             </div>
           `).join('')}
@@ -229,8 +229,9 @@ async function saveCheckoutOrder() {
       quantity: item.qty,
       unit_price: product.price,
       custom: Boolean(item.customized),
-      custom_name: item.customized ? String(item.customName).trim() : null,
-      custom_number: item.customized ? String(item.customNumber) : null
+      custom_name: item.customized && customMode(item) !== 'number' ? sanitizeCustomName(item.customName).trim() || null : null,
+      custom_number: item.customized && customMode(item) !== 'name' ? sanitizeCustomNumber(item.customNumber) || null : null,
+      custom_mode: item.customized ? customMode(item) : null
     };
   });
 
@@ -270,4 +271,10 @@ function paymentDue() {
 
 function paymentMethodLabel() {
   return PAYMENT_METHODS[window.customer.paymentMethod] || 'Monime';
+}
+
+function orderItemCustomLabel(item) {
+  const name = String(item.customName ?? item.custom_name ?? '').trim();
+  const number = String(item.customNumber ?? item.custom_number ?? '').trim();
+  return [name, number ? `#${number}` : ''].filter(Boolean).join(' ');
 }

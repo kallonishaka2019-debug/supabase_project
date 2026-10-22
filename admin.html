@@ -508,6 +508,7 @@
               <th>Order #</th>
               <th>Customer</th>
               <th>Items</th>
+              <th>Delivery</th>
               <th>Total</th>
               <th>Status</th>
               <th>Date</th>
@@ -555,6 +556,11 @@
             <option value="fulfilled">Fulfilled</option>
             <option value="cancelled">Cancelled</option>
           </select>
+          <select id="orderDeliveryFilter" aria-label="Filter by delivery method">
+            <option value="all">All delivery methods</option>
+            <option value="pickup">Pickup</option>
+            <option value="delivery">Delivery</option>
+          </select>
           <button class="admin-btn" type="button" id="exportOrdersBtn">Export CSV</button>
           <span class="admin-count" id="orderCount"></span>
         </div>
@@ -565,6 +571,7 @@
               <th>Customer</th>
               <th>Phone</th>
               <th>Items</th>
+              <th>Delivery</th>
               <th>Total</th>
               <th>Payment</th>
               <th>Status</th>
@@ -787,13 +794,30 @@
         return div.innerHTML;
       }
 
+      const PICKUP_ADDRESS = "30 Mountain Cut, Freetown";
+
+      function customLabel(item) {
+        const name = String(item.customName ?? "").trim();
+        const number = String(item.customNumber ?? "").trim();
+        return [name, number ? `#${number}` : ""].filter(Boolean).join(" ");
+      }
+
+      function deliveryMethodOf(order) {
+        return order.delivery_method === "delivery" ? "delivery" : "pickup";
+      }
+
+      function deliverySummary(order) {
+        const isDelivery = deliveryMethodOf(order) === "delivery";
+        const address = isDelivery ? String(order.delivery_address || "") : PICKUP_ADDRESS;
+        return `${isDelivery ? "Delivery" : "Pickup"}${address ? `<span class="pay-sub">${escapeHtml(address)}</span>` : ""}`;
+      }
+
       function orderItemsSummary(items) {
         return (items || [])
           .map((item) => {
             const line = `${escapeHtml(item.club)} ${escapeHtml(item.kit || "")} (${escapeHtml(item.size)}) \u00d7${Number(item.quantity)}`;
-            const custom = item.custom
-              ? `<span class="item-custom">Custom: ${escapeHtml(item.customName)} #${escapeHtml(item.customNumber)}</span>`
-              : "";
+            const label = item.custom ? customLabel(item) : "";
+            const custom = label ? `<span class="item-custom">Custom: ${escapeHtml(label)}</span>` : "";
             return `<div>${line}${custom}</div>`;
           })
           .join("");
@@ -914,15 +938,17 @@
         const items = (order.items || [])
           .map((item) => `${item.club} ${item.kit || ""} ${item.customName || ""} ${item.customNumber || ""}`)
           .join(" ");
-        return `${order.id} ${order.user_name || order.customer_name} ${order.user_phone || order.customer_phone} ${items}`.toLowerCase();
+        return `${order.id} ${order.user_name || order.customer_name} ${order.user_phone || order.customer_phone} ${deliveryMethodOf(order)} ${order.delivery_address || ""} ${items}`.toLowerCase();
       }
 
       function filteredOrders() {
         const q = document.getElementById("orderSearch").value.trim().toLowerCase();
         const filter = document.getElementById("orderFilter").value;
+        const deliveryFilter = document.getElementById("orderDeliveryFilter").value;
         return allOrders.filter(
           (order) =>
             (filter === "all" || order.status === filter) &&
+            (deliveryFilter === "all" || deliveryMethodOf(order) === deliveryFilter) &&
             (!q || orderSearchText(order).includes(q)),
         );
       }
@@ -943,6 +969,7 @@
               <td>${escapeHtml(order.user_name || order.customer_name)}</td>
               <td>${escapeHtml(order.user_phone || order.customer_phone)}</td>
               <td>${orderItemsSummary(order.items)}</td>
+              <td>${deliverySummary(order)}</td>
               <td>Le ${Number(order.total).toLocaleString()}</td>
               <td>${paymentSummary(order)}</td>
               <td><span class="badge badge-${escapeHtml(order.status)}">${escapeHtml(order.status)}</span></td>
@@ -959,7 +986,7 @@
             </tr>`,
               )
               .join("")
-          : '<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">No orders found</td></tr>';
+          : '<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);">No orders found</td></tr>';
         renderPager(document.getElementById("orderPager"), orderPage, totalPages, (page) => {
           orderPage = page;
           renderOrders();
@@ -995,7 +1022,8 @@
             .join("; ");
           const custom = (order.items || [])
             .filter((item) => item.custom)
-            .map((item) => `${item.customName} #${item.customNumber}`)
+            .map(customLabel)
+            .filter(Boolean)
             .join("; ");
           return [
             order.id,
@@ -1029,7 +1057,7 @@
           renderProducts();
         }),
       );
-      ["orderSearch", "orderFilter"].forEach((id) =>
+      ["orderSearch", "orderFilter", "orderDeliveryFilter"].forEach((id) =>
         document.getElementById(id).addEventListener("input", () => {
           orderPage = 1;
           renderOrders();
@@ -1086,23 +1114,24 @@
                 <td>#${order.id}</td>
                 <td>${escapeHtml(order.customer_name)}</td>
                 <td>${orderItemsSummary(order.items)}</td>
+                <td>${deliverySummary(order)}</td>
                 <td>Le ${Number(order.total).toLocaleString()}</td>
                 <td><span class="badge badge-${order.status}">${escapeHtml(order.status)}</span></td>
                 <td>${new Date(order.created_at).toLocaleDateString()}</td>
               </tr>`,
                 )
                 .join("")
-            : '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">No orders yet</td></tr>';
+            : '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">No orders yet</td></tr>';
         } catch {
           document.getElementById("recentOrdersBody").innerHTML =
-            '<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">Could not load stats. Is the server running?</td></tr>';
+            '<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">Could not load stats. Is the server running?</td></tr>';
         }
       }
 
       async function loadOrders() {
         const tbody = document.getElementById("ordersBody");
         tbody.innerHTML =
-          '<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">Loading...</td></tr>';
+          '<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);">Loading...</td></tr>';
         try {
           const response = await fetch(`${window.API_BASE_URL}/admin/orders`, {
             credentials: "include",
@@ -1113,7 +1142,7 @@
           renderOrders();
         } catch {
           tbody.innerHTML =
-            '<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">Could not load orders. Is the server running?</td></tr>';
+            '<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);">Could not load orders. Is the server running?</td></tr>';
         }
       }
 
