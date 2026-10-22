@@ -45,11 +45,14 @@ function setFieldError(fieldId, message) {
   if (!errorEl) {
     errorEl = document.createElement('div');
     errorEl.className = 'field-error';
+    errorEl.id = `${fieldId}Error`;
     field.parentElement.appendChild(errorEl);
   }
   
   errorEl.textContent = message;
   field.classList.add('error');
+  field.setAttribute('aria-invalid', 'true');
+  field.setAttribute('aria-describedby', errorEl.id);
 }
 
 function clearFieldError(fieldId) {
@@ -59,11 +62,17 @@ function clearFieldError(fieldId) {
   const errorEl = field.parentElement.querySelector('.field-error');
   if (errorEl) errorEl.remove();
   field.classList.remove('error');
+  field.removeAttribute('aria-invalid');
+  field.removeAttribute('aria-describedby');
 }
 
 function clearAllFieldErrors() {
   document.querySelectorAll('.field-error').forEach(el => el.remove());
-  document.querySelectorAll('.field.error').forEach(el => el.classList.remove('error'));
+  document.querySelectorAll('.error').forEach(el => {
+    el.classList.remove('error');
+    el.removeAttribute('aria-invalid');
+    el.removeAttribute('aria-describedby');
+  });
 }
 
 function escapeHtml(value) {
@@ -104,5 +113,8 @@ function validateCheckoutForm() {
     isValid = false;
   }
   
+  if (!isValid) {
+    document.querySelector('.drawer-body .error')?.focus();
+  }
   return isValid;
 }

@@ -29,6 +29,20 @@ function closeDrawer() {
   drawer.classList.remove('open');
 }
 
+function checkoutProgress(activeStep) {
+  const steps = [
+    ['cart', 'Cart'],
+    ['details', 'Details'],
+    ['confirm', 'Review / Pay']
+  ];
+  const activeIndex = steps.findIndex(([step]) => step === activeStep);
+  return `<nav class="checkout-progress" aria-label="Checkout progress">
+    ${steps.map(([step, label], index) => `<span class="checkout-progress-step ${index < activeIndex ? 'complete' : ''} ${index === activeIndex ? 'active' : ''}" ${index === activeIndex ? 'aria-current="step"' : ''}>
+      <span class="checkout-progress-number">${index < activeIndex ? '✓' : index + 1}</span>${label}
+    </span>`).join('')}
+  </nav>`;
+}
+
 function jerseySvg(p, size = 64) {
   const nameText = p.customName ? String(p.customName).slice(0, 12).toUpperCase() : '';
   const fontMap = {
@@ -55,9 +69,10 @@ function jerseyVisual(p) {
   if (!p) return '<span class="unavailable-kit">Not available yet</span>';
   if (!p.image) return jerseySvg(p);
   if (p.backImage) {
-    return `<span class="jersey-photo-wrap">
+    return `<span class="jersey-photo-wrap" data-side="front" role="button" tabindex="0" aria-label="Show back view">
       <img class="jersey-photo jersey-photo-front" src="${p.image}" alt="${p.club} ${p.kit} jersey front" loading="lazy" decoding="async" onerror="this.replaceWith(document.createRange().createContextualFragment(jerseySvg(PRODUCTS.find(product => product.id === ${p.id}))))">
       <img class="jersey-photo jersey-photo-back" src="${p.backImage}" alt="${p.club} ${p.kit} jersey back" loading="lazy" decoding="async" onerror="this.remove()">
+      <span class="jersey-photo-hint" aria-hidden="true">Tap to see back</span>
     </span>`;
   }
   return `<img class="jersey-photo" src="${p.image}" alt="${p.club} ${p.kit} jersey" loading="lazy" decoding="async" onerror="this.replaceWith(document.createRange().createContextualFragment(jerseySvg(PRODUCTS.find(product => product.id === ${p.id}))))">`;
@@ -70,7 +85,7 @@ function renderGrid() {
   const { products } = getPaginatedProducts();
   
   grid.innerHTML = products.map(p => {
-    const size = selectedSizeGlobal[p.id] || 'M';
+    const size = selectedSizeGlobal[p.id] || '';
     const isAvailable = isProductAvailable(p);
     
     return `
@@ -78,41 +93,23 @@ function renderGrid() {
         ${p.sale ? '<span class="card-sale">Sale</span>' : ''}
         <div class="jersey-art ${p.backImage ? 'has-back' : ''}">${jerseyVisual(p)}</div>
         <div class="card-body">
-          <div>
-            <div class="club">${p.club}</div>
-            <div class="kit-type">${p.kit}</div>
+          <div class="card-title">
+            <div class="club" title="${escapeHtml(p.club)}">${escapeHtml(p.club)}</div>
+            <div class="kit-type" title="${escapeHtml(p.kit)}">${escapeHtml(p.kit)}</div>
           </div>
-          <div class="size-row" data-product="${p.id}">
-            ${SIZES.map(s => `<button class="size-btn ${s === size ? 'active' : ''}" data-size="${s}" data-product="${p.id}">${s}</button>`).join('')}
+          ${isAvailable ? '' : '<span class="availability unavailable">Not available</span>'}
+          <div class="size-row" data-product="${p.id}" role="group" aria-label="Choose a size for ${escapeHtml(p.club)} ${escapeHtml(p.kit)}">
+            ${SIZES.map(s => `<button class="size-btn ${s === size ? 'active' : ''}" type="button" aria-pressed="${s === size}" data-size="${s}" data-product="${p.id}">${s}</button>`).join('')}
           </div>
+          <p class="size-error" data-size-error="${p.id}" aria-live="polite"></p>
           <div class="price-row">
             <span class="price">${CURRENCY} ${p.price}${p.sale ? `<span class="strike">${CURRENCY} ${p.sale}</span>` : ''}</span>
           </div>
-          <button class="add-btn ${isAvailable ? '' : 'request-btn'}" data-add="${p.id}">${isAvailable ? 'Add to cart' : 'Order this kit'}</button>
+          <button class="add-btn ${isAvailable ? '' : 'request-btn'}" type="button" data-add="${p.id}">${isAvailable ? 'Add to cart' : 'Order this kit'}</button>
         </div>
       </div>`;
   }).join('');
   
-  grid.querySelectorAll('.size-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedSizeGlobal[btn.dataset.product] = btn.dataset.size;
-      renderGrid();
-    });
-  });
-  
-  grid.querySelectorAll('[data-add]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = Number(btn.dataset.add);
-      const size = selectedSizeGlobal[id] || 'M';
-      addToCart(id, size);
-      btn.textContent = 'Added ✓';
-      btn.classList.add('added');
-      setTimeout(() => {
-        btn.textContent = btn.classList.contains('request-btn') ? 'Order this kit' : 'Add to cart';
-        btn.classList.remove('added');
-      }, 1100);
-    });
-  });
 }
 
 function renderDrawer() {
@@ -155,6 +152,7 @@ function cartStepHtml() {
         <h3 class="display">Your Cart</h3>
         <button class="close-btn" id="closeBtn">×</button>
       </div>
+      ${checkoutProgress('cart')}
       <div class="empty-cart">
         <div class="display">0-0</div>
         <p>Nothing in the squad yet.<br>Add a jersey to get started.</p>
@@ -214,6 +212,7 @@ function cartStepHtml() {
       <h3 class="display">Your Cart</h3>
       <button class="close-btn" id="closeBtn">×</button>
     </div>
+    ${checkoutProgress('cart')}
     <div class="drawer-body">${rows}</div>
     <div class="drawer-foot">
       <div class="subtotal-row"><span>Items</span><span>${cartItemCount()}</span></div>
@@ -245,16 +244,16 @@ function detailsStepHtml() {
       <button class="close-btn" id="closeBtn">×</button>
     </div>
     <div class="drawer-body">
+      ${checkoutProgress('details')}
       <button class="back-link" id="backToCartBtn">← Back to cart</button>
-      <span class="step-label">Step 1 of 3 — Your details</span>
       
       <div class="field">
         <label for="fName">Full name</label>
-        <input id="fName" type="text" value="${window.customer?.name || ''}" placeholder="Full name">
+        <input id="fName" type="text" autocomplete="name" value="${escapeHtml(window.customer?.name || '')}" placeholder="Full name" required>
       </div>
       <div class="field">
         <label for="fPhone">Phone</label>
-        <input id="fPhone" type="tel" value="${window.customer?.phone || ''}" placeholder="e.g. 076 000 000">
+        <input id="fPhone" type="tel" inputmode="tel" autocomplete="tel" value="${escapeHtml(window.customer?.phone || '')}" placeholder="e.g. 076 000 000" required>
       </div>
       <div class="field">
         <label>Delivery method</label>
@@ -272,7 +271,17 @@ function detailsStepHtml() {
       </div>
       <div class="field" id="addressField" style="${isDelivery ? '' : 'display:none;'}">
         <label for="fAddress">Delivery address *</label>
-        <textarea id="fAddress" placeholder="Street, area, landmark">${window.customer?.address || ''}</textarea>
+        <textarea id="fAddress" autocomplete="street-address" placeholder="Street, area, landmark">${escapeHtml(window.customer?.address || '')}</textarea>
+      </div>
+      <div class="summary-block checkout-order-summary">
+        <strong>Order summary</strong>
+        ${cart.map(item => {
+          const p = getCartProduct(item);
+          return `<div class="li-row"><span>${escapeHtml(p.club)} (${item.size}) ×${item.qty}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
+        }).join('')}
+        <div class="li-row"><span>Subtotal</span><span>${CURRENCY} ${cartTotal()}</span></div>
+        <div class="li-row"><span>Delivery</span><span>${CURRENCY} ${deliveryCost()}</span></div>
+        <div class="li-row summary-total"><span>Total</span><span>${CURRENCY} ${grandTotal()}</span></div>
       </div>
     </div>
     <div class="drawer-foot">
@@ -289,6 +298,7 @@ function confirmStepHtml() {
         <button class="close-btn" id="closeBtn">×</button>
       </div>
       <div class="drawer-body">
+        ${checkoutProgress('confirm')}
         <div class="confirm-icon">✓</div>
         <div class="order-num">#${lastOrderNumber}</div>
         <p style="color:var(--ink-soft); font-size:14px; margin-bottom:20px; line-height:1.6;">
@@ -319,8 +329,8 @@ function confirmStepHtml() {
       <button class="close-btn" id="closeBtn">×</button>
     </div>
     <div class="drawer-body">
+      ${checkoutProgress('confirm')}
       <button class="back-link" id="backToDetailsBtn">← Back to details</button>
-      <span class="step-label">Step 2 of 3 — Review</span>
       <div class="summary-block">
         ${cart.map(item => {
           const p = getCartProduct(item);
@@ -333,10 +343,10 @@ function confirmStepHtml() {
         </div>
       </div>
       <div class="summary-block">
-        <div class="li-row"><span>Name</span><span>${window.customer?.name || '—'}</span></div>
-        <div class="li-row"><span>Phone</span><span>${window.customer?.phone || '—'}</span></div>
+        <div class="li-row"><span>Name</span><span>${escapeHtml(window.customer?.name || '—')}</span></div>
+        <div class="li-row"><span>Phone</span><span>${escapeHtml(window.customer?.phone || '—')}</span></div>
         <div class="li-row"><span>Delivery</span><span style="text-transform:capitalize;">${window.customer?.delivery || 'pickup'}</span></div>
-        ${window.customer?.delivery !== 'pickup' ? `<div class="li-row"><span>Address</span><span>${window.customer?.address || '—'}</span></div>` : `<div class="li-row"><span>Pickup address</span><span>${DELIVERY_OPTIONS.pickup.address}</span></div>`}
+        ${window.customer?.delivery !== 'pickup' ? `<div class="li-row"><span>Address</span><span>${escapeHtml(window.customer?.address || '—')}</span></div>` : `<div class="li-row"><span>Pickup address</span><span>${escapeHtml(DELIVERY_OPTIONS.pickup.address)}</span></div>`}
         ${window.customer?.delivery === 'delivery' ? `<div class="li-row"><span>Delivery cost</span><span>${CURRENCY} ${deliveryCost()}</span></div>` : ''}
       </div>
     </div>
@@ -354,8 +364,8 @@ function paymentStepHtml() {
       <button class="close-btn" id="closeBtn">×</button>
     </div>
     <div class="drawer-body">
+      ${checkoutProgress('confirm')}
       <button class="back-link" id="backToReviewBtn">← Back to review</button>
-      <span class="step-label">Step 3 of 3 — Make payment</span>
       <div class="field">
         <label>Payment method</label>
         <div class="payment-method-card">
@@ -367,6 +377,7 @@ function paymentStepHtml() {
           <span class="payment-method-check" aria-label="Selected">✓</span>
         </div>
       </div>
+      <p class="payment-error" id="paymentError" role="alert" aria-live="assertive"></p>
     </div>
     <div class="drawer-foot">
       <div class="total-row"><span>Total</span><span class="display">${CURRENCY} ${grandTotal()}</span></div>

@@ -173,6 +173,14 @@ function bindDrawerEvents() {
   }
 }
 
+function toggleJerseyView(wrap) {
+  const showBack = wrap.dataset.side !== 'back';
+  wrap.dataset.side = showBack ? 'back' : 'front';
+  wrap.setAttribute('aria-label', `Show ${showBack ? 'front' : 'back'} view`);
+  const hint = wrap.querySelector('.jersey-photo-hint');
+  if (hint) hint.textContent = showBack ? 'Tap to see front' : 'Tap to see back';
+}
+
 function bindFormEvents() {
   const fName = document.getElementById('fName');
   if (fName) {
@@ -343,10 +351,13 @@ async function createMonimeCheckoutSession(orderId) {
 
 async function handlePlaceOrder() {
   const placeOrderBtn = document.getElementById('placeOrderBtn');
-  if (!placeOrderBtn) return;
+  if (!placeOrderBtn || placeOrderBtn.disabled) return;
   
   placeOrderBtn.disabled = true;
+  placeOrderBtn.setAttribute('aria-busy', 'true');
   placeOrderBtn.textContent = 'Placing order...';
+  const paymentError = document.getElementById('paymentError');
+  if (paymentError) paymentError.textContent = '';
   
   try {
     if (window.customer.paymentMethod === 'monime') {
@@ -367,10 +378,13 @@ async function handlePlaceOrder() {
         }
         throw new Error('Monime checkout URL was not returned by the payment provider.');
       } catch (error) {
-        showError(error.message || 'Monime checkout is not ready yet.');
-        placeOrderBtn.disabled = false;
-        placeOrderBtn.textContent = 'Make payment';
-        return;
+      const message = error.message || 'Monime checkout is not ready yet.';
+      if (paymentError) paymentError.textContent = `${message} Please try again.`;
+      showError(message);
+      placeOrderBtn.disabled = false;
+      placeOrderBtn.removeAttribute('aria-busy');
+      placeOrderBtn.textContent = 'Make payment';
+      return;
       }
     }
 
@@ -381,8 +395,11 @@ async function handlePlaceOrder() {
     showSuccess('✓ Order added');
   } catch (error) {
     placeOrderBtn.disabled = false;
+    placeOrderBtn.removeAttribute('aria-busy');
     placeOrderBtn.textContent = 'Make payment';
-    showError(error.message || 'Could not save your order.');
+    const message = error.message || 'Could not save your order.';
+    if (paymentError) paymentError.textContent = `${message} Please try again.`;
+    showError(message);
   }
 }
 
@@ -419,10 +436,64 @@ function setupGlobalEvents() {
   if (openCartBtn) {
     openCartBtn.addEventListener('click', openDrawer);
   }
+  const mobileCartBtn = document.getElementById('mobileCartBtn');
+  if (mobileCartBtn) mobileCartBtn.addEventListener('click', openDrawer);
   
   const openAccountBtn = document.getElementById('openAccountBtn');
   if (openAccountBtn) {
     openAccountBtn.addEventListener('click', openAccountDrawer);
+  }
+
+  const productGrid = document.getElementById('productGrid');
+  if (productGrid) {
+    productGrid.addEventListener('click', (event) => {
+      const wrap = event.target.closest('.jersey-photo-wrap');
+      if (wrap) {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleJerseyView(wrap);
+        return;
+      }
+
+      const sizeButton = event.target.closest('.size-btn');
+      if (sizeButton) {
+        selectedSizeGlobal[sizeButton.dataset.product] = sizeButton.dataset.size;
+        renderGrid();
+        return;
+      }
+
+      const addButton = event.target.closest('[data-add]');
+      if (!addButton) return;
+      const id = Number(addButton.dataset.add);
+      const size = selectedSizeGlobal[id];
+      if (!size) {
+        const sizeRow = productGrid.querySelector(`.size-row[data-product="${id}"]`);
+        const error = productGrid.querySelector(`[data-size-error="${id}"]`);
+        sizeRow?.classList.add('invalid');
+        if (error) error.textContent = 'Select a size';
+        sizeRow?.querySelector('.size-btn')?.focus();
+        return;
+      }
+
+      const product = PRODUCTS.find(candidate => candidate.id === id);
+      addToCart(id, size);
+      addButton.textContent = 'Added ✓';
+      addButton.classList.add('added');
+      addButton.setAttribute('aria-label', `${product?.club || 'Jersey'} added to cart. Open cart to review.`);
+      setTimeout(() => {
+        if (!addButton.isConnected) return;
+        addButton.textContent = addButton.classList.contains('request-btn') ? 'Order this kit' : 'Add to cart';
+        addButton.classList.remove('added');
+        addButton.removeAttribute('aria-label');
+      }, 1400);
+    });
+
+    productGrid.addEventListener('keydown', (event) => {
+      const wrap = event.target.closest('.jersey-photo-wrap');
+      if (!wrap || !['Enter', ' '].includes(event.key)) return;
+      event.preventDefault();
+      wrap.click();
+    });
   }
   
   document.addEventListener('keydown', (e) => {
