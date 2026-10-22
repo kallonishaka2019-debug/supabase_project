@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const { createClient } = require("@supabase/supabase-js");
 const { registerAuthRoutes } = require("./auth");
 const fs = require("fs");
+const { customizationFee, CUSTOM_NAME_PATTERN, CUSTOM_NUMBER_PATTERN, CUSTOM_MODES } = require("./customization");
 require("dotenv").config();
 
 const app = express();
@@ -15,7 +16,6 @@ const monimeAccessToken = String(process.env.MONIME_ACCESS_TOKEN || '').trim();
 const monimeSpaceId = String(process.env.MONIME_SPACE_ID || '').trim();
 const monimeBaseUrl = "https://api.monime.io";
 const monimeVersion = "caph.2025-08-23";
-const customJerseyPrice = 400;
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
@@ -467,18 +467,25 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
     const custom = Boolean(item.custom);
     const productId = item.productId ?? item.product_id;
     const product = catalog.find((candidate) => String(candidate.id) === String(productId));
-    const customName = custom ? String(item.customName ?? item.custom_name ?? "").trim() : null;
-    const customNumber = custom ? String(item.customNumber ?? item.custom_number ?? "").trim() : null;
+    const rawMode = String(item.customMode ?? item.custom_mode ?? "both");
+    const customMode = CUSTOM_MODES.includes(rawMode) ? rawMode : "invalid";
+    const rawName = String(item.customName ?? item.custom_name ?? "").trim();
+    const rawNumber = String(item.customNumber ?? item.custom_number ?? "").trim();
+    const customName = custom && customMode !== "number" ? rawName : null;
+    const customNumber = custom && customMode !== "name" ? rawNumber : null;
+    const customFee = custom ? customizationFee(customName, customNumber) : 0;
     return {
       productId: product?.id ?? productId,
       club: String(product?.club || ""),
       kit: String(product?.kit || ""),
       size: String(item.size || ""),
       quantity: Number(item.quantity),
-      unitPrice: custom ? customJerseyPrice : Number(product?.price),
+      unitPrice: Number(product?.price) + customFee,
       custom,
       customName,
       customNumber,
+      customMode: custom ? customMode : null,
+      customFee,
     };
   });
   const invalidItem = normalizedItems.some(
@@ -487,7 +494,15 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
       !Number.isSafeInteger(item.unitPrice) || item.unitPrice < 0 ||
       item.club.length < 2 || item.kit.length < 2 ||
       !catalog.some((product) => String(product.id) === String(item.productId)) ||
-      (item.custom && (!/^[A-Za-z0-9 .'-]{1,12}$/.test(item.customName) || !/^\d{1,2}$/.test(item.customNumber))),
+      (item.custom && (
+        item.customMode === "invalid" ||
+        (item.customName === null && item.customNumber === null) ||
+        (item.customName !== null && !CUSTOM_NAME_PATTERN.test(item.customName)) ||
+        (item.customNumber !== null && !CUSTOM_NUMBER_PATTERN.test(item.customNumber)) ||
+        (item.customMode === "name" && !item.customName) ||
+        (item.customMode === "number" && !item.customNumber) ||
+        (item.customMode === "both" && (!item.customName || !item.customNumber))
+      )),
   );
   if (invalidItem) return response.status(400).json({ error: "Order contains invalid items" });
 

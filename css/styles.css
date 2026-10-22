@@ -773,6 +773,20 @@ footer p {
 .li-custom-field input.invalid {
   border-color: var(--error);
 }
+.li-custom-modes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 10px;
+}
+.li-custom-modes .radio-opt {
+  padding: 6px 8px;
+  font-size: 11px;
+}
+.custom-pricing-note {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
 .li-custom-note {
   margin: 8px 0 0;
   color: var(--ink-soft);

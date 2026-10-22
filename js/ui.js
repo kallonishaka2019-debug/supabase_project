@@ -136,6 +136,18 @@ function renderDrawer() {
   bindDrawerEvents();
 }
 
+function refreshCartTotals() {
+  cart.forEach(item => {
+    const p = getCartProduct(item);
+    const linePrice = document.querySelector(`[data-line-price="${item.productId}"][data-size="${item.size}"]`);
+    if (p && linePrice) linePrice.textContent = `${CURRENCY} ${p.price * item.qty}`;
+  });
+  const subtotal = document.getElementById('cartSubtotal');
+  if (subtotal) subtotal.textContent = `${CURRENCY} ${cartTotal()}`;
+  const total = document.getElementById('cartGrandTotal');
+  if (total) total.textContent = `${CURRENCY} ${grandTotal()}`;
+}
+
 function cartStepHtml() {
   if (cart.length === 0) {
     return `
@@ -153,6 +165,12 @@ function cartStepHtml() {
     const p = getCartProduct(item);
     const isAvailable = isProductAvailable(p);
     const itemPrice = p ? p.price * item.qty : 0;
+    const mode = customMode(item);
+    const modeKey = `${item.productId}-${item.size}`;
+    const modeOptions = [['name', 'Name only'], ['number', 'Number only'], ['both', 'Name &amp; number']].map(([value, label]) => `
+                <label class="radio-opt ${mode === value ? 'active' : ''}">
+                  <input type="radio" name="customMode-${modeKey}" value="${value}" ${mode === value ? 'checked' : ''} data-custom-mode="${item.productId}" data-size="${item.size}"> ${label}
+                </label>`).join('');
     return `
       <div class="line-item ${isAvailable ? '' : 'line-item-unavailable'}">
         <div class="li-thumb">${jerseyVisual(p)}</div>
@@ -167,22 +185,25 @@ function cartStepHtml() {
             <button class="li-remove" data-remove="${item.productId}" data-size="${item.size}">Remove</button>
           </div>
         </div>
-        <div class="li-price">${CURRENCY} ${itemPrice}</div>
+        <div class="li-price" data-line-price="${item.productId}" data-size="${item.size}">${CURRENCY} ${itemPrice}</div>
         <div class="li-custom ${item.customized ? 'active' : ''}">
           <button class="li-custom-toggle-btn" type="button" data-customize-toggle="${item.productId}" data-size="${item.size}">
-            ${item.customized ? 'Remove customization' : `Customize with name &amp; number (${CURRENCY} ${CUSTOM_KIT_PRICE})`}
+            ${item.customized ? 'Remove customization' : `Customize with name &amp; number (${CURRENCY} ${CUSTOM_PRICE_PER_LETTER} per letter · ${CURRENCY} ${CUSTOM_PRICE_PER_DIGIT} per digit)`}
           </button>
           ${item.customized ? `
+            <div class="radio-row li-custom-modes">${modeOptions}
+            </div>
             <div class="li-custom-fields">
-              <div class="li-custom-field">
+              ${mode !== 'number' ? `<div class="li-custom-field">
                 <label for="customName-${item.productId}-${item.size}">Name</label>
                 <input id="customName-${item.productId}-${item.size}" type="text" maxlength="${CUSTOM_NAME_MAX_LENGTH}" placeholder="e.g. KAMARA" value="${escapeHtml(item.customName)}" data-custom-field="customName" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
-              </div>
-              <div class="li-custom-field li-custom-number">
+              </div>` : ''}
+              ${mode !== 'name' ? `<div class="li-custom-field li-custom-number">
                 <label for="customNumber-${item.productId}-${item.size}">Number</label>
-                <input id="customNumber-${item.productId}-${item.size}" type="text" inputmode="numeric" maxlength="2" placeholder="0-99" value="${escapeHtml(item.customNumber)}" data-custom-field="customNumber" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
-              </div>
+                <input id="customNumber-${item.productId}-${item.size}" type="text" inputmode="numeric" maxlength="${CUSTOM_NUMBER_MAX_LENGTH}" placeholder="0-99" value="${escapeHtml(item.customNumber)}" data-custom-field="customNumber" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
+              </div>` : ''}
             </div>
+            <p class="li-custom-note" data-custom-breakdown="${item.productId}" data-size="${item.size}">${escapeHtml(customizationBreakdownText(item))}</p>
             ${item.qty > 1 ? `<p class="li-custom-note">Applies to all ${item.qty} jerseys on this line.</p>` : ''}` : ''}
         </div>
       </div>`;
@@ -196,9 +217,9 @@ function cartStepHtml() {
     <div class="drawer-body">${rows}</div>
     <div class="drawer-foot">
       <div class="subtotal-row"><span>Items</span><span>${cartItemCount()}</span></div>
-      <div class="subtotal-row"><span>Subtotal</span><span>${CURRENCY} ${cartTotal()}</span></div>
+      <div class="subtotal-row"><span>Subtotal</span><span id="cartSubtotal">${CURRENCY} ${cartTotal()}</span></div>
       ${window.customer?.delivery !== 'pickup' ? `<div class="subtotal-row"><span>Delivery</span><span>${CURRENCY} ${deliveryCost()}</span></div>` : ''}
-      <div class="total-row"><span>Total</span><span class="display">${CURRENCY} ${grandTotal()}</span></div>
+      <div class="total-row"><span>Total</span><span class="display" id="cartGrandTotal">${CURRENCY} ${grandTotal()}</span></div>
       <button class="primary-btn" id="toDetailsBtn">Checkout</button>
     </div>`;
 }
@@ -276,8 +297,9 @@ function confirmStepHtml() {
         <div class="summary-block">
           ${cart.map(item => {
             const p = getCartProduct(item);
-            const label = item.customized ? `${p.club} · ${item.customName} #${item.customNumber}` : `${p.club}`;
-            return `<div class="li-row"><span>${label} (${item.size}) ×${item.qty}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
+            const label = item.customized ? `${p.club} · ${escapeHtml(customizationLabel(item))}` : `${p.club}`;
+            const fee = itemCustomizationFee(item);
+            return `<div class="li-row"><span>${label} (${item.size}) ×${item.qty}${fee ? ` · incl. customization ${CURRENCY} ${fee * item.qty}` : ''}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
           }).join('')}
           <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
             <span>Total</span><span>${CURRENCY} ${grandTotal()}</span>
@@ -302,8 +324,9 @@ function confirmStepHtml() {
       <div class="summary-block">
         ${cart.map(item => {
           const p = getCartProduct(item);
-          const label = item.customized ? `${p.club} · ${item.customName} #${item.customNumber}` : `${p.club}`;
-          return `<div class="li-row"><span>${label} (${item.size}) ×${item.qty}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
+          const label = item.customized ? `${p.club} · ${escapeHtml(customizationLabel(item))}` : `${p.club}`;
+            const fee = itemCustomizationFee(item);
+          return `<div class="li-row"><span>${label} (${item.size}) ×${item.qty}${fee ? ` · incl. customization ${CURRENCY} ${fee * item.qty}` : ''}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
         }).join('')}
         <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
           <span>Total</span><span>${CURRENCY} ${grandTotal()}</span>

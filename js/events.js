@@ -66,10 +66,17 @@ function bindDrawerEvents() {
       setItemCustomization(button.dataset.customizeToggle, button.dataset.size, !currentItem.customized);
     });
   });
+  document.querySelectorAll('[data-custom-mode]').forEach(radio => {
+    radio.addEventListener('change', () => setItemCustomMode(radio.dataset.customMode, radio.dataset.size, radio.value));
+  });
   document.querySelectorAll('[data-custom-field]').forEach(input => {
     input.addEventListener('input', () => {
       input.value = updateItemCustomization(input.dataset.customId, input.dataset.size, input.dataset.customField, input.value);
       input.classList.remove('invalid');
+      const item = findCartItem(input.dataset.customId, input.dataset.size);
+      const breakdown = document.querySelector(`[data-custom-breakdown="${input.dataset.customId}"][data-size="${input.dataset.size}"]`);
+      if (item && breakdown) breakdown.textContent = customizationBreakdownText(item);
+      refreshCartTotals();
     });
   });
 
@@ -86,7 +93,10 @@ function bindDrawerEvents() {
           const item = findCartItem(input.dataset.customId, input.dataset.size);
           if (item && incomplete.includes(item) && !String(input.value).trim()) input.classList.add('invalid');
         });
-        showError('Enter a name and number for each customized jersey');
+        const modes = new Set(incomplete.map(customMode));
+        showError(modes.size === 1 && modes.has('name') ? 'Enter a name for each customized jersey'
+          : modes.size === 1 && modes.has('number') ? 'Enter a number for each customized jersey'
+          : 'Enter the name and/or number for each customized jersey');
         return;
       }
       checkoutStep = 'details';
