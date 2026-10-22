@@ -378,13 +378,13 @@ async function handlePlaceOrder() {
         }
         throw new Error('Monime checkout URL was not returned by the payment provider.');
       } catch (error) {
-      const message = error.message || 'Monime checkout is not ready yet.';
-      if (paymentError) paymentError.textContent = `${message} Please try again.`;
-      showError(message);
-      placeOrderBtn.disabled = false;
-      placeOrderBtn.removeAttribute('aria-busy');
-      placeOrderBtn.textContent = 'Make payment';
-      return;
+        const message = error.message || 'Monime checkout is not ready yet.';
+        if (paymentError) paymentError.textContent = `${message} Please try again.`;
+        showError(message);
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.removeAttribute('aria-busy');
+        placeOrderBtn.textContent = 'Make payment';
+        return;
       }
     }
 

@@ -68,7 +68,7 @@ function clearFieldError(fieldId) {
 
 function clearAllFieldErrors() {
   document.querySelectorAll('.field-error').forEach(el => el.remove());
-  document.querySelectorAll('.error').forEach(el => {
+  document.querySelectorAll('.drawer-body .field input.error, .drawer-body .field textarea.error, .drawer-body .field select.error').forEach(el => {
     el.classList.remove('error');
     el.removeAttribute('aria-invalid');
     el.removeAttribute('aria-describedby');
