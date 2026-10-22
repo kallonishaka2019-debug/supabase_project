@@ -80,6 +80,9 @@ function updateAccountButton() {
 
   accountButton.replaceChildren();
   const avatarUrl = getAccountAvatarUrl(currentAccount);
+  const accountLabel = currentAccount
+    ? `Open ${currentAccount.name}'s profile`
+    : 'Open account';
   if (currentAccount && avatarUrl) {
     const avatar = document.createElement('img');
     avatar.className = 'account-avatar';
@@ -87,16 +90,27 @@ function updateAccountButton() {
     avatar.alt = '';
     avatar.referrerPolicy = 'no-referrer';
     accountButton.appendChild(avatar);
-    accountButton.setAttribute('aria-label', `Open ${currentAccount.name}'s profile`);
-    accountButton.title = currentAccount.name;
+    accountButton.setAttribute('aria-label', accountLabel);
+    accountButton.title = accountLabel;
     accountButton.classList.add('has-avatar');
     return;
   }
 
   accountButton.classList.remove('has-avatar');
-  accountButton.removeAttribute('title');
-  accountButton.textContent = currentAccount ? currentAccount.name.split(' ')[0] : 'Account';
-  accountButton.setAttribute('aria-label', currentAccount ? `Open ${currentAccount.name}'s profile` : 'Open account');
+  const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  icon.setAttribute('viewBox', '0 0 24 24');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.setAttribute('focusable', 'false');
+  const head = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  head.setAttribute('cx', '12');
+  head.setAttribute('cy', '8');
+  head.setAttribute('r', '4');
+  const shoulders = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  shoulders.setAttribute('d', 'M4 21a8 8 0 0 1 16 0');
+  icon.append(head, shoulders);
+  accountButton.appendChild(icon);
+  accountButton.setAttribute('aria-label', accountLabel);
+  accountButton.title = accountLabel;
 }
 
 function getAccountAvatarUrl(account) {

@@ -85,7 +85,6 @@ nav a {
   font-size: 14px;
   font-weight: 600;
 }
-.cart-btn,
 .add-btn,
 .primary-btn,
 .hero-cta {
@@ -96,8 +95,34 @@ nav a {
   border-radius: var(--radius);
   font-weight: 700;
 }
+.cart-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 24px;
+  background: #d94826;
+  color: #fff;
+  border: 0;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 700;
+}
+.cart-btn:hover {
+  background: #c13d20;
+}
+.cart-btn:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
 .cart-count {
-  background: var(--crimson);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  background: #fff;
+  color: #182333;
   border-radius: 50%;
   padding: 2px 6px;
   margin-left: 5px;
@@ -302,10 +327,13 @@ footer {
 }
 @media (max-width: 640px) {
   .header-inner {
-    padding: 14px 18px;
+    padding: 14px 12px;
   }
   nav {
-    gap: 8px;
+    gap: 6px;
+  }
+  .logo .display {
+    font-size: clamp(18px, 5.5vw, 22px);
   }
   .hero {
     padding: 50px 18px 40px;
@@ -315,7 +343,6 @@ footer {
   }
 }
 
-.account-btn,
 .ghost-btn {
   background: none;
   color: var(--ink);
@@ -323,6 +350,27 @@ footer {
   padding: 9px 12px;
   border-radius: var(--radius);
   font-weight: 700;
+}
+.account-btn {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  padding: 0;
+  background: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.account-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 .theme-toggle {
   display: flex;
@@ -1187,7 +1235,6 @@ footer p {
   background: #090e15;
   color: var(--ink);
 }
-:root[data-theme="dark"] .cart-btn,
 :root[data-theme="dark"] .primary-btn,
 :root[data-theme="dark"] .size-btn.active,
 :root[data-theme="dark"] .size-btn:focus-visible,

@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&family=Barlow+Condensed:ital,wght@1,800&family=Lora:wght@400;700&family=Caveat:wght@700&family=Roboto:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20260924-6" />
+    <link rel="stylesheet" href="css/styles.css?v=20261022-1" />
     <script>
       window.API_BASE_URL = "/api";
       window.WHATSAPP_NUMBER = "23278952429";
@@ -31,11 +31,20 @@
             rel="noopener"
             >Contact</a
           >
-          <button class="account-btn" id="openAccountBtn" type="button">
-            Account
-          </button>
           <button class="cart-btn" id="openCartBtn" aria-label="Open cart">
             Cart <span class="cart-count" id="cartCount">0</span>
+          </button>
+          <button
+            class="account-btn"
+            id="openAccountBtn"
+            type="button"
+            aria-label="Open account"
+            title="Open account"
+          >
+            <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+              <circle cx="12" cy="8" r="4"></circle>
+              <path d="M4 21a8 8 0 0 1 16 0"></path>
+            </svg>
           </button>
         </nav>
       </div>
