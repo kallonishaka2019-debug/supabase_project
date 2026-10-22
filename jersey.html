@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&family=Barlow+Condensed:ital,wght@1,800&family=Lora:wght@400;700&family=Caveat:wght@700&family=Roboto:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20261022-1" />
+    <link rel="stylesheet" href="css/styles.css?v=20261022-2" />
     <script>
       window.API_BASE_URL = "/api";
       window.WHATSAPP_NUMBER = "23278952429";
@@ -31,7 +31,7 @@
             rel="noopener"
             >Contact</a
           >
-          <button class="cart-btn" id="openCartBtn" aria-label="Open cart">
+          <button class="cart-btn" id="openCartBtn" aria-label="Open cart, 0 items">
             Cart <span class="cart-count" id="cartCount">0</span>
           </button>
           <button
@@ -107,6 +107,12 @@
     </footer>
 
     <div class="overlay" id="overlay"></div>
+    <div class="mobile-cart-bar" id="mobileCartBar" hidden>
+      <button class="mobile-cart-btn" id="mobileCartBtn" type="button" aria-label="Open cart, 0 items">
+        <span><span id="mobileCartCount">0</span> items · <span id="mobileCartSubtotal">Le 0</span></span>
+        <span>View cart →</span>
+      </button>
+    </div>
     <aside class="drawer" id="drawer" aria-label="Cart">
       <div id="drawerContent"></div>
     </aside>

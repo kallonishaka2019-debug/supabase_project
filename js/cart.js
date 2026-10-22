@@ -54,7 +54,7 @@ function addToCart(productId, size) {
     cart.push({ productId, size, qty: 1 });
   }
   persistCart();
-  updateCartCount();
+  updateCartCount(true);
   showSuccess(product && isProductAvailable(product) ? '✓ Added to cart' : '✓ Order request added');
 }
 
@@ -149,6 +149,7 @@ function updateItemCustomization(productId, size, field, value) {
   const cleaned = field === 'customNumber' ? sanitizeCustomNumber(value) : sanitizeCustomName(value);
   item[field] = cleaned;
   persistCart();
+  updateCartCount();
   return cleaned;
 }
 
@@ -211,14 +212,38 @@ function grandTotal() {
   return cartTotal() + deliveryCost();
 }
 
-function updateCartCount() {
+function updateCartCount(bump = false) {
+  const count = cartItemCount();
   const countEl = document.getElementById('cartCount');
   if (countEl) {
-    countEl.textContent = cartItemCount();
-    if (cartItemCount() > 0) {
-      countEl.style.animation = 'pulse-count 0.3s ease';
-      setTimeout(() => countEl.style.animation = '', 300);
+    countEl.textContent = count;
+  }
+  const cartButton = document.getElementById('openCartBtn');
+  if (cartButton) {
+    cartButton.setAttribute('aria-label', `Open cart, ${count} ${count === 1 ? 'item' : 'items'}`);
+    if (bump) {
+      cartButton.classList.remove('bump');
+      void cartButton.offsetWidth;
+      cartButton.classList.add('bump');
+      setTimeout(() => cartButton.classList.remove('bump'), 350);
     }
+  }
+  const mobileCartBar = document.getElementById('mobileCartBar');
+  const mobileCartBtn = document.getElementById('mobileCartBtn');
+  const mobileCount = document.getElementById('mobileCartCount');
+  const mobileSubtotal = document.getElementById('mobileCartSubtotal');
+  if (mobileCartBar && mobileCartBtn) {
+    mobileCartBar.hidden = count === 0;
+    document.body.classList.toggle('has-cart', count > 0);
+    mobileCartBtn.setAttribute('aria-label', `Open cart, ${count} ${count === 1 ? 'item' : 'items'}, subtotal ${CURRENCY} ${cartTotal()}`);
+  }
+  if (mobileCount) mobileCount.textContent = count;
+  if (mobileSubtotal) mobileSubtotal.textContent = `${CURRENCY} ${cartTotal()}`;
+  if (bump && countEl) {
+    countEl.classList.remove('bump');
+    void countEl.offsetWidth;
+    countEl.classList.add('bump');
+    setTimeout(() => countEl.classList.remove('bump'), 350);
   }
 }
 
