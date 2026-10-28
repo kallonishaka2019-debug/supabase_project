@@ -366,6 +366,9 @@ async function handlePlaceOrder() {
           if (!Number.isSafeInteger(orderId) || orderId < 1) {
             throw new Error('The order was saved, but its ID was not returned.');
           }
+          if (savedOrder.trackingAvailable === false) {
+            showError('Order saved, but tracking needs the server update and Supabase migration. Contact the store if you need your invoice.');
+          }
           pendingMonimeOrderId = orderId;
         }
         const monimeCheckout = await createMonimeCheckoutSession(pendingMonimeOrderId);
@@ -394,6 +397,9 @@ async function handlePlaceOrder() {
     showSuccess(`✓ Order #${orderId} placed`);
     if (typeof showOrderCompletion === 'function') {
       await showOrderCompletion(orderId);
+    }
+    if (savedOrder.trackingAvailable === false) {
+      showError('Order saved, but tracking needs the server update and Supabase migration. Contact the store if you need your invoice.');
     }
   } catch (error) {
     placeOrderBtn.disabled = false;

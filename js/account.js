@@ -601,9 +601,6 @@ async function saveCheckoutOrder() {
       showError('Order saved, but this browser could not save its private tracking link.');
     }
   }
-  if (data.trackingAvailable === false) {
-    showError('Order saved, but tracking needs the server update and Supabase migration. Contact the store if you need your invoice.');
-  }
   return data;
 }
 
