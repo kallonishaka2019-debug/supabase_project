@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <title>Invoice · JerseyHub</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="stylesheet" href="css/styles.css?v=20261022-1" />
+    <style>
+      body { min-height: 100vh; }
+      .inv-page { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; }
+      .inv-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+      .inv-toolbar a, .inv-toolbar button { text-decoration: none; cursor: pointer; font: inherit; font-weight: 700; }
+      .inv-sheet { padding: 28px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+      .inv-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; }
+      .inv-head h1 { margin: 0 0 4px; font-size: 26px; }
+      .inv-store p, .inv-meta p { margin: 2px 0; color: var(--ink-soft); font-size: 13px; }
+      .inv-meta { text-align: right; }
+      .inv-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; color: #fff; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; }
+      .inv-badge.paid { background: var(--success); }
+      .inv-badge.partial, .inv-badge.unpaid { background: var(--pitch); }
+      .inv-badge.refunded { background: var(--error); }
+      .inv-parties { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 24px 0; font-size: 13px; }
+      .inv-parties h2 { margin: 0 0 6px; color: var(--ink-soft); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .inv-parties p { margin: 2px 0; }
+      .inv-table-wrap { overflow-x: auto; }
+      .inv-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .inv-table th, .inv-table td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+      .inv-table th:nth-child(n+2), .inv-table td:nth-child(n+2) { text-align: right; white-space: nowrap; }
+      .inv-totals { margin: 16px 0 0 auto; width: min(320px, 100%); font-size: 14px; }
+      .inv-totals div { display: flex; justify-content: space-between; padding: 4px 0; }
+      .inv-totals .grand { border-top: 2px solid var(--ink); margin-top: 6px; padding-top: 8px; font-size: 16px; font-weight: 700; }
+      .inv-note { margin-top: 20px; color: var(--ink-soft); font-size: 13px; }
+      .inv-state { padding: 40px 16px; text-align: center; color: var(--ink-soft); }
+      .inv-state.error { color: var(--error); }
+      .inv-share { margin-top: 20px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+      .inv-share h2 { margin: 0 0 6px; font-size: 18px; }
+      .inv-share p { margin: 4px 0 10px; color: var(--ink-soft); font-size: 13px; }
+      .inv-share-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+      .inv-share select, .inv-share input { padding: 9px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); color: var(--ink); font: inherit; font-size: 13px; }
+      .inv-share input { flex: 1; min-width: 200px; }
+      .inv-share button, .inv-share a.share-btn { padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: none; color: var(--ink); font: inherit; font-size: 13px; font-weight: 700; text-decoration: none; cursor: pointer; }
+      .inv-preview { margin: 10px 0; padding: 12px; border-left: 3px solid var(--pitch); background: var(--paper-dim); font-size: 13px; }
+      .inv-links { margin: 8px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--ink-soft); }
+      .inv-links li { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
+      .inv-privacy { font-size: 12px; }
+      @media (max-width: 520px) { .inv-sheet { padding: 16px; } .inv-meta { text-align: left; } }
+      @media print {
+        :root, :root[data-theme="dark"] { --paper: #fff; --paper-dim: #fff; --surface: #fff; --ink: #000; --ink-soft: #444; --line: #bbb; }
+        body { background: #fff; }
+        .inv-toolbar, .inv-share, header, footer { display: none !important; }
+        .inv-page { padding: 0; max-width: none; }
+        .inv-sheet { border: 0; padding: 0; }
+        .inv-badge { color: #000; border: 1px solid #000; background: none !important; }
+      }
+    </style>
+    <script>
+      window.API_BASE_URL = "/api";
+    </script>
+  </head>
+  <body>
+    <main class="inv-page">
+      <div class="inv-toolbar" id="invToolbar" hidden>
+        <a class="ghost-btn" href="jersey.html">← Back to store</a>
+        <button class="ghost-btn" id="printBtn" type="button">Print</button>
+        <button class="primary-btn" id="downloadBtn" type="button">Download PDF</button>
+      </div>
+      <div id="invoiceRoot" aria-live="polite"><p class="inv-state">Loading invoice...</p></div>
+      <section class="inv-share" id="sharePanel" hidden></section>
+    </main>
+    <script src="js/config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/invoice.js"></script>
+  </body>
+</html>

@@ -5,6 +5,7 @@
     'notifications.js',
     'cart.js',
     'search.js',
+    'orders.js',
     'account.js',
     'ui.js',
     'events.js',

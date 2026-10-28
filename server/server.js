@@ -5,6 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { createClient } = require("@supabase/supabase-js");
 const { registerAuthRoutes } = require("./auth");
+const { registerOrderRoutes } = require("./order-routes");
 const fs = require("fs");
 const { customizationFee, CUSTOM_NAME_PATTERN, CUSTOM_NUMBER_PATTERN, CUSTOM_MODES } = require("./customization");
 require("dotenv").config();
@@ -155,7 +156,7 @@ app.post("/api/webhooks/monime", express.raw({ type: "*/*", limit: "100kb" }), a
 
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("id, status, payment_method, monime_session_id")
+      .select("id, status, payment_method, payment_due, monime_session_id")
       .eq("monime_session_id", sessionId)
       .maybeSingle();
     if (orderError) throw orderError;
@@ -173,7 +174,7 @@ app.post("/api/webhooks/monime", express.raw({ type: "*/*", limit: "100kb" }), a
 
     const { error: updateError } = await supabaseAdmin
       .from("orders")
-      .update({ status: "confirmed" })
+      .update({ status: "confirmed", amount_paid: order.payment_due })
       .eq("id", order.id)
       .eq("status", "pending");
     if (updateError) throw updateError;
@@ -298,7 +299,7 @@ app.post("/api/payments/create", async (request, response) => {
       if (String(existingSession?.status || "").toLowerCase() === "completed") {
         const { error: updateError } = await supabaseAdmin
           .from("orders")
-          .update({ status: "confirmed" })
+          .update({ status: "confirmed", amount_paid: order.payment_due })
           .eq("id", order.id)
           .eq("status", "pending");
         if (updateError) throw updateError;
@@ -415,7 +416,7 @@ app.all("/api/payments/return", async (request, response) => {
   try {
     const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
-      .select("id, status, payment_method, monime_session_id")
+      .select("id, status, payment_method, payment_due, monime_session_id")
       .eq("id", orderId)
       .maybeSingle();
 
@@ -437,7 +438,7 @@ app.all("/api/payments/return", async (request, response) => {
     if (String(session?.status || "").toLowerCase() === "completed") {
       const { error: updateError } = await supabaseAdmin
         .from("orders")
-        .update({ status: "confirmed" })
+        .update({ status: "confirmed", amount_paid: order.payment_due })
         .eq("id", order.id)
         .eq("status", "pending");
       if (updateError) throw updateError;
@@ -538,6 +539,7 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
       total,
       delivery_method: selectedDelivery === "pickup" ? "pickup" : "delivery",
       delivery_address: String(finalDeliveryAddress || ""),
+      delivery_fee: deliveryCost,
       payment_method: selectedPaymentMethod,
       payment_plan: String(paymentPlan || "full"),
       payment_due: paymentDueAmount,
@@ -556,16 +558,7 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
   response.status(201).json({ order });
 });
 
-app.get("/api/orders", ensureSupabase, requireAuth, async (request, response) => {
-  const { data: orders, error } = await supabaseAdmin
-    .from("orders")
-    .select("*")
-    .eq("user_id", request.user.id)
-    .order("created_at", { ascending: false });
-
-  if (error) return response.status(500).json({ error: "Failed to load orders" });
-  response.json({ orders: orders || [] });
-});
+registerOrderRoutes(app, { supabaseAdmin, ensureSupabase, requireAuth, requireAdmin, appBaseUrl });
 
 app.get("/api/admin/orders", ensureSupabase, requireAdmin, async (request, response) => {
   const { data: orders, error } = await supabaseAdmin
@@ -588,16 +581,6 @@ app.get("/api/admin/orders", ensureSupabase, requireAdmin, async (request, respo
   }));
 
   response.json({ orders: merged });
-});
-
-app.patch("/api/admin/orders/:id", ensureSupabase, requireAdmin, async (request, response) => {
-  const { status } = request.body;
-  if (!["pending", "confirmed", "fulfilled", "cancelled"].includes(status)) {
-    return response.status(400).json({ error: "Invalid status" });
-  }
-  const { error } = await supabaseAdmin.from("orders").update({ status }).eq("id", request.params.id);
-  if (error) return response.status(500).json({ error: "Failed to update order" });
-  response.json({ success: true });
 });
 
 app.delete("/api/admin/orders/:id", ensureSupabase, requireAdmin, async (request, response) => {
