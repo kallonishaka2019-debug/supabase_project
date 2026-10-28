@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const { createClient } = require("@supabase/supabase-js");
 const { registerAuthRoutes } = require("./auth");
 const fs = require("fs");
+const PDFDocument = require("pdfkit");
 const { customizationFee, CUSTOM_NAME_PATTERN, CUSTOM_NUMBER_PATTERN, CUSTOM_MODES } = require("./customization");
 require("dotenv").config();
 
@@ -565,6 +566,150 @@ app.get("/api/orders", ensureSupabase, requireAuth, async (request, response) =>
 
   if (error) return response.status(500).json({ error: "Failed to load orders" });
   response.json({ orders: orders || [] });
+});
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]
+  ));
+}
+
+function buildInvoice(order) {
+  const items = (Array.isArray(order.items) ? order.items : []).map((item) => {
+    const quantity = Number(item.quantity) || 0;
+    const unitPrice = Number(item.unitPrice ?? item.unit_price) || 0;
+    const parts = [];
+    if (item.custom) {
+      if (item.customName ?? item.custom_name) parts.push(`Name: ${item.customName ?? item.custom_name}`);
+      if (item.customNumber ?? item.custom_number) parts.push(`Number: ${item.customNumber ?? item.custom_number}`);
+    }
+    return {
+      club: String(item.club || ""),
+      kit: String(item.kit || ""),
+      size: String(item.size || ""),
+      quantity,
+      unitPrice,
+      lineTotal: unitPrice * quantity,
+      customization: parts.join(", "),
+    };
+  });
+  const subtotal = items.reduce((sum, item) => sum + item.lineTotal, 0);
+  const total = Number(order.total) || 0;
+  const paymentDue = Number(order.payment_due) || 0;
+  return {
+    invoiceNumber: `INV-${order.id}`,
+    orderId: order.id,
+    createdAt: order.created_at,
+    status: order.status,
+    customer: { name: order.customer_name || "", phone: order.customer_phone || "" },
+    delivery: { method: order.delivery_method || "", address: order.delivery_address || "" },
+    payment: {
+      method: order.payment_method || "",
+      plan: order.payment_plan || "",
+      due: paymentDue,
+      status: ["confirmed", "fulfilled"].includes(order.status) ? "Paid / confirmed"
+        : order.status === "cancelled" ? "Cancelled" : "Awaiting payment confirmation",
+    },
+    items,
+    subtotal,
+    deliveryFee: Math.max(0, total - subtotal),
+    total,
+  };
+}
+
+function renderInvoiceHtml(inv) {
+  const money = (n) => `Le ${Number(n).toLocaleString("en-US")}`;
+  const date = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-GB") : "";
+  const rows = inv.items.map((item) => `<tr>
+<td>${escapeHtml(item.club)}${item.kit ? ` (${escapeHtml(item.kit)})` : ""}${item.customization ? `<br><small>${escapeHtml(item.customization)}</small>` : ""}</td>
+<td>${escapeHtml(item.size)}</td><td class="n">${item.quantity}</td>
+<td class="n">${money(item.unitPrice)}</td><td class="n">${money(item.lineTotal)}</td></tr>`).join("");
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${escapeHtml(inv.invoiceNumber)} - JerseyHub</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;color:#111;max-width:800px;margin:24px auto;padding:0 16px}
+header{display:flex;justify-content:space-between;border-bottom:2px solid #111;padding-bottom:12px}
+h1{margin:0}h2{font-size:14px;text-transform:uppercase;margin:0 0 6px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid #ccc}
+.n{text-align:right}.totals{margin-top:12px;margin-left:auto;width:260px}
+.totals div{display:flex;justify-content:space-between;padding:3px 0}
+.grand{font-weight:bold;border-top:2px solid #111}
+button{margin-top:24px;padding:10px 16px;cursor:pointer}
+@media print{button{display:none}body{margin:0}}
+</style></head><body>
+<header><div><h1>JerseyHub</h1><div>Invoice</div></div>
+<div><div><strong>${escapeHtml(inv.invoiceNumber)}</strong></div><div>Order #${escapeHtml(inv.orderId)}</div><div>Date: ${escapeHtml(date)}</div><div>Status: ${escapeHtml(inv.status)}</div></div></header>
+<div class="grid">
+<section><h2>Customer</h2>${escapeHtml(inv.customer.name)}<br>${escapeHtml(inv.customer.phone)}</section>
+<section><h2>Delivery</h2>${escapeHtml(inv.delivery.method)}<br>${escapeHtml(inv.delivery.address)}</section>
+<section><h2>Payment</h2>Method: ${escapeHtml(inv.payment.method)}<br>Plan: ${escapeHtml(inv.payment.plan)}<br>Due now: ${money(inv.payment.due)}<br>Status: ${escapeHtml(inv.payment.status)}</section>
+</div>
+<table><thead><tr><th>Item</th><th>Size</th><th class="n">Qty</th><th class="n">Unit</th><th class="n">Amount</th></tr></thead><tbody>${rows}</tbody></table>
+<div class="totals"><div><span>Subtotal</span><span>${money(inv.subtotal)}</span></div>
+<div><span>Delivery</span><span>${money(inv.deliveryFee)}</span></div>
+<div class="grand"><span>Total</span><span>${money(inv.total)}</span></div></div>
+<button onclick="window.print()">Print / Download PDF</button>
+</body></html>`;
+}
+
+function sendInvoicePdf(response, inv) {
+  response.setHeader("Content-Type", "application/pdf");
+  response.setHeader("Content-Disposition", `attachment; filename="invoice-${inv.orderId}.pdf"`);
+  const doc = new PDFDocument({ margin: 50 });
+  doc.pipe(response);
+  const money = (n) => `Le ${Number(n).toLocaleString("en-US")}`;
+  doc.fontSize(22).text("JerseyHub");
+  doc.fontSize(11).text(`Invoice ${inv.invoiceNumber}  |  Order #${inv.orderId}`);
+  doc.text(`Date: ${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString("en-GB") : ""}   Status: ${inv.status}`);
+  doc.moveDown();
+  doc.fontSize(12).text("Customer", { underline: true }).fontSize(11)
+    .text(`${inv.customer.name}  ${inv.customer.phone}`);
+  doc.moveDown(0.5);
+  doc.fontSize(12).text("Delivery", { underline: true }).fontSize(11)
+    .text(`${inv.delivery.method}${inv.delivery.address ? ` - ${inv.delivery.address}` : ""}`);
+  doc.moveDown(0.5);
+  doc.fontSize(12).text("Payment", { underline: true }).fontSize(11)
+    .text(`Method: ${inv.payment.method}  Plan: ${inv.payment.plan}  Due now: ${money(inv.payment.due)}`)
+    .text(`Status: ${inv.payment.status}`);
+  doc.moveDown();
+  doc.fontSize(12).text("Items", { underline: true }).fontSize(11);
+  for (const item of inv.items) {
+    doc.text(`${item.club}${item.kit ? ` (${item.kit})` : ""} - Size ${item.size} x ${item.quantity} @ ${money(item.unitPrice)} = ${money(item.lineTotal)}`);
+    if (item.customization) doc.fontSize(9).text(`   ${item.customization}`).fontSize(11);
+  }
+  doc.moveDown();
+  doc.text(`Subtotal: ${money(inv.subtotal)}`).text(`Delivery: ${money(inv.deliveryFee)}`);
+  doc.fontSize(13).text(`Total: ${money(inv.total)}`);
+  doc.end();
+}
+
+app.get("/api/orders/:id/invoice", ensureSupabase, requireAuth, async (request, response) => {
+  if (!/^\d+$/.test(request.params.id)) return response.status(400).json({ error: "Invalid order id" });
+  const orderId = Number(request.params.id);
+  if (!Number.isSafeInteger(orderId)) return response.status(400).json({ error: "Invalid order id" });
+
+  const { data: order, error } = await supabaseAdmin
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .eq("user_id", request.user.id)
+    .maybeSingle();
+
+  if (error) return response.status(500).json({ error: "Failed to load invoice" });
+  if (!order) return response.status(404).json({ error: "Order not found" });
+
+  const invoice = buildInvoice(order);
+  const format = String(request.query.format || "json").toLowerCase();
+  response.setHeader("Cache-Control", "private, no-store");
+  if (format === "html") {
+    response.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'");
+    return response.type("html").send(renderInvoiceHtml(invoice));
+  }
+  if (format === "pdf") return sendInvoicePdf(response, invoice);
+  response.json({ invoice });
 });
 
 app.get("/api/admin/orders", ensureSupabase, requireAdmin, async (request, response) => {
