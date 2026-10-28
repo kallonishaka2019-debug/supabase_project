@@ -49,7 +49,7 @@ It creates:
 - `public.invoice_share_links`: revocable expiring links; only token hashes are stored
 - `public.order_status_notifications`: deduplicated in-app status notifications
 
-The order-tracking migration restricts customer order reads to their own authenticated orders, including excluding guest checkouts. New history, invoice, notification, and share-link tables have RLS enabled without browser policies; the server accesses them with its server-only Supabase secret. Admin status changes and Monime confirmations use a database transition function that audits each change and inserts customer notifications idempotently.
+The order-tracking migration restricts customer order reads to their own authenticated orders, including excluding guest checkouts. New history, invoice, notification, and share-link tables have RLS enabled without browser policies; the server accesses them with its server-only Supabase secret. Admin status changes and Monime confirmations use a database transition function that audits each change and inserts customer notifications idempotently. API writes reject cross-origin browser requests, and authenticated order reads/writes and share-link creation are rate-limited per account.
 
 The customer **My Orders** drawer shows order items, history/timeline, delivery estimate, notifications, and invoice preview. **Print / Save PDF** opens the invoice in the browser print dialog; select “Save as PDF” to download a PDF without exposing order details to a third-party PDF service. Social sharing creates a random link that expires after 24 hours by default (up to 168 hours), can be revoked from the order card, and reveals only invoice summary data without customer details or address.
 
