@@ -123,6 +123,20 @@
         background: var(--success);
         color: #fff;
       }
+      .badge-processed,
+      .badge-shipped {
+        background: #2563eb;
+        color: #fff;
+      }
+      .badge-delivered {
+        background: var(--success);
+        color: #fff;
+      }
+      .badge-returned,
+      .badge-refunded {
+        background: #7c3aed;
+        color: #fff;
+      }
       .badge-cancelled {
         background: var(--error);
         color: #fff;
@@ -553,8 +567,12 @@
             <option value="all">All statuses</option>
             <option value="pending">Pending</option>
             <option value="confirmed">Confirmed</option>
-            <option value="fulfilled">Fulfilled</option>
+            <option value="processed">Processed</option>
+            <option value="shipped">Shipped</option>
+            <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
+            <option value="returned">Returned</option>
+            <option value="refunded">Refunded</option>
           </select>
           <select id="orderDeliveryFilter" aria-label="Filter by delivery method">
             <option value="all">All delivery methods</option>
@@ -825,13 +843,18 @@
 
       function paymentSummary(order) {
         const method = order.payment_method === "monime" ? "Monime" : order.payment_method;
-        const paid = ["confirmed", "fulfilled"].includes(order.status);
+        const paymentConfirmed = ["confirmed", "processed", "shipped", "delivered", "returned", "refunded"].includes(order.status);
+        const paid = paymentConfirmed && Number(order.payment_due) >= Number(order.total);
         const state =
-          order.status === "cancelled"
-            ? "Cancelled"
+          order.status === "refunded"
+            ? "Refunded"
+            : order.status === "cancelled"
+              ? "Cancelled"
             : paid
               ? "Paid"
-              : "Awaiting payment";
+              : paymentConfirmed && Number(order.payment_due) > 0
+                ? "Partially paid"
+                : "Awaiting payment";
         const plan = order.payment_plan ? ` \u00b7 ${order.payment_plan}` : "";
         const due = order.payment_due
           ? `Due Le ${Number(order.payment_due).toLocaleString()}`
@@ -975,12 +998,10 @@
               <td><span class="badge badge-${escapeHtml(order.status)}">${escapeHtml(order.status)}</span></td>
               <td>${new Date(order.created_at).toLocaleDateString()}</td>
               <td>
-                <select class="admin-btn small" data-order-id="${order.id}" onchange="updateOrderStatus(${order.id}, this.value)">
-                  <option value="pending" ${order.status === "pending" ? "selected" : ""}>Pending</option>
-                  <option value="confirmed" ${order.status === "confirmed" ? "selected" : ""}>Confirmed</option>
-                  <option value="fulfilled" ${order.status === "fulfilled" ? "selected" : ""}>Fulfilled (delivered)</option>
-                  <option value="cancelled" ${order.status === "cancelled" ? "selected" : ""}>Cancelled</option>
+                <select class="admin-btn small" data-order-status="${order.id}" onchange="updateOrderStatus(${order.id}, this.value, this.parentElement.querySelector('input[type=date]').value)">
+                  ${["pending", "confirmed", "processed", "shipped", "delivered", "cancelled", "returned", "refunded"].map((status) => `<option value="${status}" ${order.status === status ? "selected" : ""}>${status[0].toUpperCase() + status.slice(1)}</option>`).join("")}
                 </select>
+                <input class="admin-btn small" type="date" value="${escapeHtml(order.estimated_delivery_at ? String(order.estimated_delivery_at).slice(0, 10) : "")}" aria-label="Estimated delivery date for order ${order.id}" onchange="updateOrderStatus(${order.id}, this.parentElement.querySelector('select').value, this.value)" />
                 <button class="admin-btn small danger" type="button" onclick="deleteOrder(${order.id})">Delete</button>
               </td>
             </tr>`,
@@ -1146,7 +1167,7 @@
         }
       }
 
-      async function updateOrderStatus(orderId, status) {
+      async function updateOrderStatus(orderId, status, estimatedDeliveryAt = "") {
         try {
           const response = await fetch(
             `${window.API_BASE_URL}/admin/orders/${orderId}`,
@@ -1154,13 +1175,15 @@
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               credentials: "include",
-              body: JSON.stringify({ status }),
+              body: JSON.stringify({ status, estimatedDeliveryAt: estimatedDeliveryAt || null }),
             },
           );
-          if (!response.ok) throw new Error("Failed to update order");
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(result.error || "Failed to update order");
           await loadOrders();
-        } catch {
-          alert("Could not update order status. Please try again.");
+        } catch (error) {
+          alert(error.message || "Could not update order status. Please try again.");
+          await loadOrders();
         }
       }
 
