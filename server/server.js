@@ -5,6 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { createClient } = require("@supabase/supabase-js");
 const { registerAuthRoutes } = require("./auth");
+const { ORDER_STATUSES, calculateInvoiceAmounts, hashShareToken } = require("./order-domain");
 const fs = require("fs");
 const { customizationFee, CUSTOM_NAME_PATTERN, CUSTOM_NUMBER_PATTERN, CUSTOM_MODES } = require("./customization");
 require("dotenv").config();
@@ -93,6 +94,70 @@ async function readCatalogProducts() {
   return error || !data ? products : data.map(useWebpImages);
 }
 
+async function transitionOrderStatus(orderId, status, { actorId = null, note = null } = {}) {
+  const { data, error } = await supabaseAdmin.rpc("transition_order_status", {
+    p_order_id: Number(orderId),
+    p_status: status,
+    p_actor_id: actorId,
+    p_note: note,
+    p_estimated_delivery_at: null,
+  });
+  if (error) throw error;
+  return data;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]);
+}
+
+async function loadInvoice(order) {
+  const [{ data: invoice, error: invoiceError }] = await Promise.all([
+    supabaseAdmin
+      .from("order_invoices")
+      .select("invoice_number, created_at")
+      .eq("order_id", order.id)
+      .single(),
+  ]);
+  if (invoiceError) throw invoiceError;
+
+  return {
+    invoiceNumber: invoice.invoice_number,
+    issuedAt: invoice.created_at,
+    store: { name: "JerseyHub SL", location: "Freetown, Sierra Leone" },
+    customer: { name: order.customer_name, phone: order.customer_phone },
+    delivery: {
+      method: order.delivery_method,
+      address: order.delivery_address || "",
+      estimatedAt: order.estimated_delivery_at || null,
+    },
+    items: Array.isArray(order.items) ? order.items : [],
+    payment: {
+      method: order.payment_method,
+      plan: order.payment_plan,
+      dueAtCheckout: Number(order.payment_due),
+      status: order.status,
+    },
+    ...calculateInvoiceAmounts(order),
+  };
+}
+
+async function loadOrderHistory(orderIds) {
+  if (!orderIds.length) return [];
+  const { data, error } = await supabaseAdmin
+    .from("order_status_history")
+    .select("order_id, from_status, to_status, actor_type, note, created_at")
+    .in("order_id", orderIds)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
 // Catalog rows saved before the WebP conversion still point at .png files that no longer exist.
 function useWebpImages(product) {
   const toWebp = (value) => (typeof value === "string" ? value.replace(/^(customJersey\/.+)\.png$/, "$1.webp") : value);
@@ -171,12 +236,7 @@ app.post("/api/webhooks/monime", express.raw({ type: "*/*", limit: "100kb" }), a
       return response.status(200).json({ received: true });
     }
 
-    const { error: updateError } = await supabaseAdmin
-      .from("orders")
-      .update({ status: "confirmed" })
-      .eq("id", order.id)
-      .eq("status", "pending");
-    if (updateError) throw updateError;
+    await transitionOrderStatus(order.id, "confirmed", { note: "Payment confirmed by Monime webhook" });
     return response.status(200).json({ received: true });
   } catch (error) {
     console.error("Monime webhook processing failed:", error.message);
@@ -296,12 +356,7 @@ app.post("/api/payments/create", async (request, response) => {
         return response.status(502).json({ error: "The saved Monime session does not match this order." });
       }
       if (String(existingSession?.status || "").toLowerCase() === "completed") {
-        const { error: updateError } = await supabaseAdmin
-          .from("orders")
-          .update({ status: "confirmed" })
-          .eq("id", order.id)
-          .eq("status", "pending");
-        if (updateError) throw updateError;
+        await transitionOrderStatus(order.id, "confirmed", { note: "Payment verified by Monime checkout" });
         return response.status(409).json({ error: "This order has already been paid." });
       }
       if (String(existingSession?.status || "").toLowerCase() === "pending") {
@@ -435,12 +490,7 @@ app.all("/api/payments/return", async (request, response) => {
     }
 
     if (String(session?.status || "").toLowerCase() === "completed") {
-      const { error: updateError } = await supabaseAdmin
-        .from("orders")
-        .update({ status: "confirmed" })
-        .eq("id", order.id)
-        .eq("status", "pending");
-      if (updateError) throw updateError;
+      await transitionOrderStatus(order.id, "confirmed", { note: "Payment confirmed by Monime return" });
       resultUrl.searchParams.set("payment", "success");
     } else if (outcome === "cancelled") {
       resultUrl.searchParams.set("payment", "cancelled");
@@ -564,7 +614,199 @@ app.get("/api/orders", ensureSupabase, requireAuth, async (request, response) =>
     .order("created_at", { ascending: false });
 
   if (error) return response.status(500).json({ error: "Failed to load orders" });
-  response.json({ orders: orders || [] });
+  const orderIds = (orders || []).map((order) => order.id);
+  try {
+    const [history, { data: invoices, error: invoiceError }] = await Promise.all([
+      loadOrderHistory(orderIds),
+      orderIds.length
+        ? supabaseAdmin.from("order_invoices").select("order_id, invoice_number").in("order_id", orderIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (invoiceError) throw invoiceError;
+    const historyByOrder = new Map();
+    for (const entry of history) {
+      if (!historyByOrder.has(entry.order_id)) historyByOrder.set(entry.order_id, []);
+      historyByOrder.get(entry.order_id).push(entry);
+    }
+    const invoiceByOrder = new Map((invoices || []).map((invoice) => [invoice.order_id, invoice.invoice_number]));
+    const safeOrders = (orders || []).map(({ monime_session_id, ...order }) => ({
+      ...order,
+      invoice_number: invoiceByOrder.get(order.id) || null,
+      status_history: historyByOrder.get(order.id) || [],
+    }));
+    return response.json({ orders: safeOrders });
+  } catch {
+    return response.status(500).json({ error: "Failed to load order history" });
+  }
+});
+
+app.get("/api/orders/notifications", ensureSupabase, requireAuth, async (request, response) => {
+  const { data, error } = await supabaseAdmin
+    .from("order_status_notifications")
+    .select("id, order_id, status, message, created_at, read_at")
+    .eq("user_id", request.user.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) return response.status(500).json({ error: "Failed to load order notifications" });
+  response.json({ notifications: data || [] });
+});
+
+app.post("/api/orders/notifications/:id/read", ensureSupabase, requireAuth, async (request, response) => {
+  const notificationId = Number(request.params.id);
+  if (!Number.isSafeInteger(notificationId) || notificationId < 1) {
+    return response.status(400).json({ error: "Invalid notification id" });
+  }
+  const { error } = await supabaseAdmin
+    .from("order_status_notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId)
+    .eq("user_id", request.user.id);
+  if (error) return response.status(500).json({ error: "Could not update notification" });
+  response.status(204).end();
+});
+
+app.get("/api/orders/:id", ensureSupabase, requireAuth, async (request, response) => {
+  const orderId = Number(request.params.id);
+  if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
+  const { data: order, error } = await supabaseAdmin
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .eq("user_id", request.user.id)
+    .maybeSingle();
+  if (error) return response.status(500).json({ error: "Failed to load order" });
+  if (!order) return response.status(404).json({ error: "Order not found" });
+  try {
+    const [history, { data: invoice, error: invoiceError }] = await Promise.all([
+      loadOrderHistory([orderId]),
+      supabaseAdmin.from("order_invoices").select("invoice_number").eq("order_id", orderId).single(),
+    ]);
+    if (invoiceError) throw invoiceError;
+    const { monime_session_id, ...safeOrder } = order;
+    return response.json({
+      order: { ...safeOrder, invoice_number: invoice.invoice_number, status_history: history },
+    });
+  } catch {
+    return response.status(500).json({ error: "Failed to load order details" });
+  }
+});
+
+app.get("/api/orders/:id/invoice", ensureSupabase, requireAuth, async (request, response) => {
+  const orderId = Number(request.params.id);
+  if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
+  const { data: order, error } = await supabaseAdmin
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .eq("user_id", request.user.id)
+    .maybeSingle();
+  if (error) return response.status(500).json({ error: "Failed to load invoice" });
+  if (!order) return response.status(404).json({ error: "Invoice not found" });
+  try {
+    return response.json({ invoice: await loadInvoice(order) });
+  } catch {
+    return response.status(500).json({ error: "Failed to generate invoice" });
+  }
+});
+
+app.post("/api/orders/:id/share-links", ensureSupabase, requireAuth, async (request, response) => {
+  const orderId = Number(request.params.id);
+  if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
+  const expiresInHours = Number(request.body?.expiresInHours ?? 24);
+  if (!Number.isFinite(expiresInHours) || expiresInHours < 1 || expiresInHours > 168) {
+    return response.status(400).json({ error: "Share links must expire within 1 to 168 hours" });
+  }
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from("orders")
+    .select("id")
+    .eq("id", orderId)
+    .eq("user_id", request.user.id)
+    .maybeSingle();
+  if (orderError) return response.status(500).json({ error: "Could not create share link" });
+  if (!order) return response.status(404).json({ error: "Order not found" });
+
+  const token = crypto.randomBytes(32).toString("base64url");
+  const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000).toISOString();
+  const { data: link, error } = await supabaseAdmin
+    .from("invoice_share_links")
+    .insert({
+      order_id: orderId,
+      user_id: request.user.id,
+      token_hash: hashShareToken(token),
+      expires_at: expiresAt,
+    })
+    .select("id")
+    .single();
+  if (error) return response.status(500).json({ error: "Could not create share link" });
+  response.status(201).json({
+    shareLink: {
+      id: link.id,
+      url: `${appBaseUrl}/api/invoice-share/${token}`,
+      expiresAt,
+    },
+  });
+});
+
+app.delete("/api/orders/:id/share-links/:shareId", ensureSupabase, requireAuth, async (request, response) => {
+  const orderId = Number(request.params.id);
+  const shareId = Number(request.params.shareId);
+  if (!Number.isSafeInteger(orderId) || orderId < 1 || !Number.isSafeInteger(shareId) || shareId < 1) {
+    return response.status(400).json({ error: "Invalid share link" });
+  }
+  const { data, error } = await supabaseAdmin
+    .from("invoice_share_links")
+    .update({ revoked_at: new Date().toISOString() })
+    .eq("id", shareId)
+    .eq("order_id", orderId)
+    .eq("user_id", request.user.id)
+    .is("revoked_at", null)
+    .select("id")
+    .maybeSingle();
+  if (error) return response.status(500).json({ error: "Could not revoke share link" });
+  if (!data) return response.status(404).json({ error: "Share link not found" });
+  response.status(204).end();
+});
+
+app.get("/api/invoice-share/:token", async (request, response) => {
+  const token = String(request.params.token || "");
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return response.status(404).send("Invoice link is invalid or expired.");
+  const { data: link, error } = await supabaseAdmin
+    .from("invoice_share_links")
+    .select("id, order_id, expires_at, revoked_at")
+    .eq("token_hash", hashShareToken(token))
+    .maybeSingle();
+  if (error || !link || link.revoked_at || Date.parse(link.expires_at) <= Date.now()) {
+    return response.status(404).send("Invoice link is invalid or expired.");
+  }
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from("orders")
+    .select("id, items, total, status, payment_due, payment_plan")
+    .eq("id", link.order_id)
+    .maybeSingle();
+  if (orderError || !order) return response.status(404).send("Invoice link is invalid or expired.");
+  const { data: invoice, error: invoiceError } = await supabaseAdmin
+    .from("order_invoices")
+    .select("invoice_number, created_at")
+    .eq("order_id", order.id)
+    .single();
+  if (invoiceError) return response.status(404).send("Invoice link is invalid or expired.");
+  let amounts;
+  try {
+    amounts = calculateInvoiceAmounts(order);
+  } catch {
+    return response.status(500).send("Invoice summary is unavailable.");
+  }
+  const items = (order.items || []).map((item) =>
+    `<li>${escapeHtml(item.club)} ${escapeHtml(item.kit)} × ${escapeHtml(item.quantity)}</li>`,
+  ).join("");
+  const documentType = amounts.documentType === "receipt" ? "Receipt" : "Invoice summary";
+  response.set({
+    "Cache-Control": "no-store",
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+  });
+  response.type("html").send(`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${documentType} ${escapeHtml(invoice.invoice_number)}</title><style>body{font:16px system-ui,sans-serif;max-width:640px;margin:3rem auto;padding:0 1rem;color:#17212b}h1{color:#087f68}li{padding:.35rem 0}.total{font-weight:700;font-size:1.2rem}</style><main><h1>JerseyHub SL · ${documentType}</h1><p>${escapeHtml(invoice.invoice_number)}</p><ul>${items}</ul><p>Status: ${escapeHtml(order.status)} · Payment: ${escapeHtml(amounts.paymentStatus)}</p><p class="total">Total: Le ${amounts.total.toLocaleString()}</p><p>Created ${escapeHtml(new Date(invoice.created_at).toLocaleDateString())}</p></main></html>`);
 });
 
 app.get("/api/admin/orders", ensureSupabase, requireAdmin, async (request, response) => {
@@ -591,13 +833,43 @@ app.get("/api/admin/orders", ensureSupabase, requireAdmin, async (request, respo
 });
 
 app.patch("/api/admin/orders/:id", ensureSupabase, requireAdmin, async (request, response) => {
-  const { status } = request.body;
-  if (!["pending", "confirmed", "fulfilled", "cancelled"].includes(status)) {
+  const orderId = Number(request.params.id);
+  const status = String(request.body?.status || "");
+  const note = request.body?.note === undefined ? null : String(request.body.note).trim();
+  const estimatedDeliveryAt = request.body?.estimatedDeliveryAt;
+  if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
+  if (!ORDER_STATUSES.includes(status)) {
     return response.status(400).json({ error: "Invalid status" });
   }
-  const { error } = await supabaseAdmin.from("orders").update({ status }).eq("id", request.params.id);
-  if (error) return response.status(500).json({ error: "Failed to update order" });
-  response.json({ success: true });
+  if (note !== null && note.length > 500) return response.status(400).json({ error: "Status note is too long" });
+  let deliveryDate = null;
+  if (estimatedDeliveryAt !== undefined && estimatedDeliveryAt !== null && estimatedDeliveryAt !== "") {
+    deliveryDate = new Date(estimatedDeliveryAt);
+    if (Number.isNaN(deliveryDate.getTime())) return response.status(400).json({ error: "Invalid estimated delivery date" });
+    deliveryDate = deliveryDate.toISOString();
+  }
+  try {
+    const { data, error } = await supabaseAdmin.rpc("transition_order_status", {
+      p_order_id: orderId,
+      p_status: status,
+      p_actor_id: request.user.id,
+      p_note: note,
+      p_estimated_delivery_at: deliveryDate,
+    });
+    if (error) {
+      const message = String(error.message || "");
+      if (/invalid order status transition/i.test(message)) {
+        return response.status(409).json({ error: "That status change is not allowed." });
+      }
+      if (/order not found/i.test(message)) return response.status(404).json({ error: "Order not found" });
+      console.error("Could not update order status:", message);
+      return response.status(500).json({ error: "Failed to update order" });
+    }
+    response.json({ success: true, order: data });
+  } catch (error) {
+    console.error("Could not update order status:", error.message);
+    response.status(500).json({ error: "Failed to update order" });
+  }
 });
 
 app.delete("/api/admin/orders/:id", ensureSupabase, requireAdmin, async (request, response) => {
