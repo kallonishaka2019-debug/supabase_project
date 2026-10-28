@@ -385,9 +385,16 @@ async function handlePlaceOrder() {
 
     invalidatePendingMonimeOrder();
     const savedOrder = await saveCheckoutOrder();
-    lastOrderNumber = Number(savedOrder?.order?.id ?? savedOrder?.id ?? Math.floor(1000 + Math.random() * 9000));
+    const orderId = Number(savedOrder?.order?.id ?? savedOrder?.id);
+    if (!Number.isSafeInteger(orderId) || orderId < 1) {
+      throw new Error('The order was saved, but its ID was not returned.');
+    }
+    lastOrderNumber = orderId;
     renderDrawer();
-    showSuccess('✓ Order added');
+    showSuccess(`✓ Order #${orderId} placed`);
+    if (typeof showOrderCompletion === 'function') {
+      await showOrderCompletion(orderId);
+    }
   } catch (error) {
     placeOrderBtn.disabled = false;
     placeOrderBtn.textContent = 'Make payment';
