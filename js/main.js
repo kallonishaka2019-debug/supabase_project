@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   updatePagination();
 
   await sessionRestore;
+  if (currentAccount) startOrderNotificationPolling();
 
   const verifiedParam = new URLSearchParams(window.location.search).get('verified');
   if (verifiedParam) {

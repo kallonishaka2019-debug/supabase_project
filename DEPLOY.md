@@ -90,7 +90,7 @@ For static hosting without backend:
 ## Supabase Setup
 
 1. Create project at [supabase.com](https://supabase.com)
-2. For an existing database, run `supabase/migrate_products.sql` and `supabase/migrate_auth_security.sql` in the SQL Editor. For a brand-new database, run `supabase/schema.sql` instead.
+2. For an existing database, run `supabase/migrate_products.sql`, `supabase/migrate_auth_security.sql` and then `supabase/migrate_order_tracking.sql` (order tracking, invoices, share links, notifications) in the SQL Editor, before deploying. For a brand-new database, run `supabase/schema.sql` followed by `supabase/migrate_order_tracking.sql`.
 3. Get API keys from Settings → API
 4. Add credentials to your deployment environment
 

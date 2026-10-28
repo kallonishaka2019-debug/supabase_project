@@ -145,7 +145,7 @@ function accountStepHtml() {
           <span class="theme-toggle-icon" aria-hidden="true">${isDarkTheme ? '☀' : '☾'}</span>
           <span class="theme-toggle-label">${isDarkTheme ? 'Light' : 'Dark'}</span>
         </button>
-        <button class="ghost-btn" id="viewOrdersBtn">View Order History</button>
+        <button class="ghost-btn" id="viewOrdersBtn">My Orders</button>
         <button class="primary-btn" id="logoutBtn" style="margin-top: 12px;">Log out</button>
       </div>`;
   }
@@ -160,76 +160,6 @@ function accountStepHtml() {
       <p class="account-intro">Sign in with your Google account to track orders and checkout faster.</p>
       <a class="primary-btn" id="googleSignInBtn" href="${API_BASE}/auth/google" style="text-align:center;text-decoration:none;display:block;">Continue with Google</a>
     </div>`;
-}
-
-function ordersStepHtml() {
-  return `
-    <div class="drawer-head">
-      <h3 class="display">Order History</h3>
-      <button class="close-btn" id="closeBtn">×</button>
-    </div>
-    <div class="drawer-body" id="ordersContent">
-      <button class="back-link" id="backToAccountBtn">← Back to account</button>
-      <p style="color: var(--ink-soft); font-size: 13px;">Loading your orders...</p>
-    </div>`;
-}
-
-async function loadOrderHistory() {
-  const content = document.getElementById('ordersContent');
-  if (!content) return;
-
-  try {
-    const response = await fetch(`${API_BASE}/orders`, { credentials: 'include' });
-    if (!response.ok) throw new Error('Failed to load orders');
-    const data = await response.json();
-    renderOrderHistory(content, data.orders || []);
-  } catch (error) {
-    content.innerHTML = `
-      <button class="back-link" id="backToAccountBtn">← Back to account</button>
-      <p style="color: var(--error); font-size: 13px;">Unable to load orders. Please try again later.</p>`;
-  }
-}
-
-function renderOrderHistory(container, orders) {
-  if (orders.length === 0) {
-    container.innerHTML = `
-      <button class="back-link" id="backToAccountBtn">← Back to account</button>
-      <div class="empty-orders">
-        <div class="display">0-0</div>
-        <p>You haven't placed any orders yet.</p>
-      </div>`;
-    return;
-  }
-  
-  const ordersHtml = orders.map(order => {
-    const items = order.items || [];
-    const statusClass = order.status || 'pending';
-    
-    return `
-      <div class="order-card">
-        <div class="order-card-header">
-          <span class="order-id">#${order.id}</span>
-          <span class="order-date">${new Date(order.created_at).toLocaleDateString()}</span>
-          <span class="order-status ${statusClass}">${order.status || 'pending'}</span>
-        </div>
-        <div class="order-card-body">
-          ${items.map(item => `
-            <div class="order-item">
-              <span>${escapeHtml(item.club)} ${item.kit ? `(${escapeHtml(item.kit)})` : ''} - Size ${escapeHtml(item.size)} × ${item.quantity}${item.custom ? ` · ${escapeHtml(orderItemCustomLabel(item))}` : ''}</span>
-              <span>${CURRENCY} ${(item.unitPrice ?? item.unit_price) * item.quantity}</span>
-            </div>
-          `).join('')}
-          <div class="order-total">
-            <span>Total</span>
-            <span>${CURRENCY} ${order.total}</span>
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-  
-  container.innerHTML = `
-    <button class="back-link" id="backToAccountBtn">← Back to account</button>
-    ${ordersHtml}`;
 }
 
 async function saveCheckoutOrder() {

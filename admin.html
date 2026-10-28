@@ -123,8 +123,13 @@
         background: var(--success);
         color: #fff;
       }
-      .badge-cancelled {
+      .badge-cancelled,
+      .badge-returned {
         background: var(--error);
+        color: #fff;
+      }
+      .badge-processing {
+        background: var(--crimson);
         color: #fff;
       }
       .admin-section {
@@ -553,8 +558,10 @@
             <option value="all">All statuses</option>
             <option value="pending">Pending</option>
             <option value="confirmed">Confirmed</option>
+            <option value="processing">Processing</option>
             <option value="fulfilled">Fulfilled</option>
             <option value="cancelled">Cancelled</option>
+            <option value="returned">Returned</option>
           </select>
           <select id="orderDeliveryFilter" aria-label="Filter by delivery method">
             <option value="all">All delivery methods</option>
@@ -825,13 +832,10 @@
 
       function paymentSummary(order) {
         const method = order.payment_method === "monime" ? "Monime" : order.payment_method;
-        const paid = ["confirmed", "fulfilled"].includes(order.status);
-        const state =
-          order.status === "cancelled"
-            ? "Cancelled"
-            : paid
-              ? "Paid"
-              : "Awaiting payment";
+        const paymentLabels = { paid: "Paid", partial: "Partially paid", unpaid: "Awaiting payment", refunded: "Refunded" };
+        const state = ["cancelled", "returned"].includes(order.status) && order.payment_status !== "refunded"
+          ? order.status === "cancelled" ? "Cancelled" : "Returned"
+          : paymentLabels[order.payment_status] || "Awaiting payment";
         const plan = order.payment_plan ? ` \u00b7 ${order.payment_plan}` : "";
         const due = order.payment_due
           ? `Due Le ${Number(order.payment_due).toLocaleString()}`
@@ -975,12 +979,13 @@
               <td><span class="badge badge-${escapeHtml(order.status)}">${escapeHtml(order.status)}</span></td>
               <td>${new Date(order.created_at).toLocaleDateString()}</td>
               <td>
-                <select class="admin-btn small" data-order-id="${order.id}" onchange="updateOrderStatus(${order.id}, this.value)">
-                  <option value="pending" ${order.status === "pending" ? "selected" : ""}>Pending</option>
-                  <option value="confirmed" ${order.status === "confirmed" ? "selected" : ""}>Confirmed</option>
-                  <option value="fulfilled" ${order.status === "fulfilled" ? "selected" : ""}>Fulfilled (delivered)</option>
-                  <option value="cancelled" ${order.status === "cancelled" ? "selected" : ""}>Cancelled</option>
+                <select class="admin-btn small" data-order-id="${order.id}" aria-label="Update order status" onchange="updateOrderStatus(${order.id}, this.value)">
+                  ${orderStatusOptions(order.status)}
                 </select>
+                <button class="admin-btn small" type="button" onclick="addOrderNote(${order.id})">Note</button>
+                <button class="admin-btn small" type="button" onclick="setEstimatedDelivery(${order.id})">Delivery date</button>
+                ${["paid", "refunded"].includes(order.payment_status) || ["cancelled", "returned"].includes(order.status) ? "" : `<button class="admin-btn small" type="button" onclick="markOrderPaid(${order.id})">Mark paid</button>`}
+                <button class="admin-btn small" type="button" onclick="showOrderHistory(${order.id})">History</button>
                 <button class="admin-btn small danger" type="button" onclick="deleteOrder(${order.id})">Delete</button>
               </td>
             </tr>`,
@@ -1146,21 +1151,83 @@
         }
       }
 
-      async function updateOrderStatus(orderId, status) {
+      const ORDER_STATUS_LABELS = {
+        pending: "Pending",
+        confirmed: "Confirmed",
+        processing: "Processing",
+        fulfilled: "Fulfilled (delivered)",
+        cancelled: "Cancelled",
+        returned: "Returned",
+      };
+      // UI hint only; the server and database enforce the allowed transitions.
+      const ORDER_NEXT_STATUSES = {
+        pending: ["confirmed", "cancelled"],
+        confirmed: ["processing", "fulfilled", "cancelled"],
+        processing: ["fulfilled", "cancelled"],
+        fulfilled: ["returned"],
+        cancelled: [],
+        returned: [],
+      };
+
+      function orderStatusOptions(current) {
+        return [current, ...(ORDER_NEXT_STATUSES[current] || [])]
+          .map((status) => `<option value="${status}" ${status === current ? "selected" : ""}>${ORDER_STATUS_LABELS[status]}</option>`)
+          .join("");
+      }
+
+      async function patchOrder(orderId, body) {
         try {
-          const response = await fetch(
-            `${window.API_BASE_URL}/admin/orders/${orderId}`,
-            {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              credentials: "include",
-              body: JSON.stringify({ status }),
-            },
+          const response = await fetch(`${window.API_BASE_URL}/admin/orders/${orderId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(body),
+          });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || "Failed to update order");
+          }
+        } catch (error) {
+          alert(error.message || "Could not update the order. Please try again.");
+        }
+        await loadOrders();
+      }
+
+      function updateOrderStatus(orderId, status) {
+        const note = prompt("Optional note for the customer (shown in their order history):", "");
+        if (note === null) return loadOrders();
+        return patchOrder(orderId, { status, note });
+      }
+
+      function addOrderNote(orderId) {
+        const note = prompt("Note to add to the order history (visible to the customer):", "");
+        if (note && note.trim()) return patchOrder(orderId, { note });
+      }
+
+      function setEstimatedDelivery(orderId) {
+        const value = prompt("Estimated delivery date (YYYY-MM-DD), or leave empty to clear:", "");
+        if (value === null) return;
+        return patchOrder(orderId, { estimatedDelivery: value.trim() });
+      }
+
+      function markOrderPaid(orderId) {
+        if (confirm("Mark this order as fully paid? Only do this once payment has been received.")) {
+          return patchOrder(orderId, { paymentStatus: "paid" });
+        }
+      }
+
+      async function showOrderHistory(orderId) {
+        try {
+          const response = await fetch(`${window.API_BASE_URL}/admin/orders/${orderId}/history`, { credentials: "include" });
+          if (!response.ok) throw new Error("Failed to load history");
+          const { history } = await response.json();
+          alert(
+            history
+              .map((entry) => `${new Date(entry.created_at).toLocaleString()} - ${ORDER_STATUS_LABELS[entry.status] || entry.status}${entry.note ? ": " + entry.note : ""}`)
+              .join("\n") || "No history yet.",
           );
-          if (!response.ok) throw new Error("Failed to update order");
-          await loadOrders();
         } catch {
-          alert("Could not update order status. Please try again.");
+          alert("Could not load the order history.");
         }
       }
 
