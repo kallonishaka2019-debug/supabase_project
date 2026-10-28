@@ -225,7 +225,7 @@ async function loadOrderHistory() {
   } catch (error) {
     content.innerHTML = `
       <button class="back-link" id="backToAccountBtn">← Back to account</button>
-      <p style="color: var(--error); font-size: 13px;" role="alert">Unable to load orders. Please try again.</p>
+      <p style="color: var(--error); font-size: 13px;" role="alert">${escapeHtml(error.message || 'Unable to load orders. Please try again.')}</p>
       <button class="ghost-btn" id="retryOrdersBtn" type="button">Retry</button>`;
     content.onclick = (event) => {
       if (event.target.closest('#retryOrdersBtn')) loadOrderHistory();
