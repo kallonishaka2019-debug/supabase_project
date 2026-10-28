@@ -190,6 +190,13 @@ async function loadOrderHistory() {
   }
 }
 
+const ORDER_STATUS_NOTES = {
+  pending: 'Pending: order received, awaiting payment confirmation.',
+  confirmed: 'Confirmed: payment received, we are preparing your order.',
+  fulfilled: 'Fulfilled: your order has been delivered or collected.',
+  cancelled: 'Cancelled: this order was cancelled.'
+};
+
 function renderOrderHistory(container, orders) {
   if (orders.length === 0) {
     container.innerHTML = `
@@ -210,8 +217,9 @@ function renderOrderHistory(container, orders) {
         <div class="order-card-header">
           <span class="order-id">#${order.id}</span>
           <span class="order-date">${new Date(order.created_at).toLocaleDateString()}</span>
-          <span class="order-status ${statusClass}">${order.status || 'pending'}</span>
+          <span class="order-status ${statusClass}">${escapeHtml(order.status || 'pending')}</span>
         </div>
+        <p class="order-status-note" style="font-size:12px;opacity:.7;margin:4px 0;">${escapeHtml(ORDER_STATUS_NOTES[order.status || 'pending'] || '')}</p>
         <div class="order-card-body">
           ${items.map(item => `
             <div class="order-item">
@@ -223,6 +231,7 @@ function renderOrderHistory(container, orders) {
             <span>Total</span>
             <span>${CURRENCY} ${order.total}</span>
           </div>
+          <a class="ghost-btn" style="display:block;text-align:center;text-decoration:none;margin-top:8px;" href="${API_BASE}/orders/${encodeURIComponent(order.id)}/invoice?format=html" target="_blank" rel="noopener">View Invoice${order.status === 'pending' ? ' (payment pending)' : ''}</a>
         </div>
       </div>`;
   }).join('');
