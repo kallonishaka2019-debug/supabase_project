@@ -288,6 +288,20 @@ const userRateLimitOptions = {
   keyGenerator: (request) => request.user?.id || ipKeyGenerator(request.ip),
   message: { error: "Too many requests. Please try again shortly." },
 };
+const orderIpLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 120,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again shortly." },
+});
+const shareIpLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: { error: "Too many requests. Please try again shortly." },
+});
 const orderReadLimiter = rateLimit({ ...userRateLimitOptions, limit: 60 });
 const orderWriteLimiter = rateLimit({ ...userRateLimitOptions, limit: 30 });
 const shareCreateLimiter = rateLimit({
@@ -653,7 +667,7 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
   response.status(201).json({ order });
 });
 
-app.get("/api/orders", ensureSupabase, requireAuth, orderReadLimiter, async (request, response) => {
+app.get("/api/orders", ensureSupabase, orderIpLimiter, requireAuth, orderReadLimiter, async (request, response) => {
   const { data: orders, error } = await supabaseAdmin
     .from("orders")
     .select("*")
@@ -694,7 +708,7 @@ app.get("/api/orders", ensureSupabase, requireAuth, orderReadLimiter, async (req
   }
 });
 
-app.get("/api/orders/notifications", ensureSupabase, requireAuth, orderReadLimiter, async (request, response) => {
+app.get("/api/orders/notifications", ensureSupabase, orderIpLimiter, requireAuth, orderReadLimiter, async (request, response) => {
   const { data, error } = await supabaseAdmin
     .from("order_status_notifications")
     .select("id, order_id, status, message, created_at, read_at")
@@ -705,7 +719,7 @@ app.get("/api/orders/notifications", ensureSupabase, requireAuth, orderReadLimit
   response.json({ notifications: data || [] });
 });
 
-app.post("/api/orders/notifications/:id/read", ensureSupabase, requireAuth, orderWriteLimiter, async (request, response) => {
+app.post("/api/orders/notifications/:id/read", ensureSupabase, orderIpLimiter, requireAuth, orderWriteLimiter, async (request, response) => {
   const notificationId = Number(request.params.id);
   if (!Number.isSafeInteger(notificationId) || notificationId < 1) {
     return response.status(400).json({ error: "Invalid notification id" });
@@ -719,7 +733,7 @@ app.post("/api/orders/notifications/:id/read", ensureSupabase, requireAuth, orde
   response.status(204).end();
 });
 
-app.get("/api/orders/:id", ensureSupabase, requireAuth, orderReadLimiter, async (request, response) => {
+app.get("/api/orders/:id", ensureSupabase, orderIpLimiter, requireAuth, orderReadLimiter, async (request, response) => {
   const orderId = Number(request.params.id);
   if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
   const { data: order, error } = await supabaseAdmin
@@ -745,7 +759,7 @@ app.get("/api/orders/:id", ensureSupabase, requireAuth, orderReadLimiter, async 
   }
 });
 
-app.get("/api/orders/:id/invoice", ensureSupabase, requireAuth, orderReadLimiter, async (request, response) => {
+app.get("/api/orders/:id/invoice", ensureSupabase, orderIpLimiter, requireAuth, orderReadLimiter, async (request, response) => {
   const orderId = Number(request.params.id);
   if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
   const { data: order, error } = await supabaseAdmin
@@ -763,7 +777,7 @@ app.get("/api/orders/:id/invoice", ensureSupabase, requireAuth, orderReadLimiter
   }
 });
 
-app.post("/api/orders/:id/share-links", ensureSupabase, requireAuth, shareCreateLimiter, async (request, response) => {
+app.post("/api/orders/:id/share-links", ensureSupabase, shareIpLimiter, requireAuth, shareCreateLimiter, async (request, response) => {
   const orderId = Number(request.params.id);
   if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
   const expiresInHours = Number(request.body?.expiresInHours ?? 24);
@@ -801,7 +815,7 @@ app.post("/api/orders/:id/share-links", ensureSupabase, requireAuth, shareCreate
   });
 });
 
-app.delete("/api/orders/:id/share-links/:shareId", ensureSupabase, requireAuth, orderWriteLimiter, async (request, response) => {
+app.delete("/api/orders/:id/share-links/:shareId", ensureSupabase, orderIpLimiter, requireAuth, orderWriteLimiter, async (request, response) => {
   const orderId = Number(request.params.id);
   const shareId = Number(request.params.shareId);
   if (!Number.isSafeInteger(orderId) || orderId < 1 || !Number.isSafeInteger(shareId) || shareId < 1) {
@@ -887,7 +901,7 @@ app.get("/api/admin/orders", ensureSupabase, requireAdmin, async (request, respo
   response.json({ orders: merged });
 });
 
-app.patch("/api/admin/orders/:id", ensureSupabase, requireAdmin, orderWriteLimiter, async (request, response) => {
+app.patch("/api/admin/orders/:id", ensureSupabase, orderIpLimiter, requireAdmin, orderWriteLimiter, async (request, response) => {
   const orderId = Number(request.params.id);
   const requestedStatus = String(request.body?.status || "");
   const status = requestedStatus === "fulfilled" ? "delivered" : requestedStatus;
