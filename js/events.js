@@ -35,6 +35,15 @@ function bindDrawerEvents() {
       loadOrderHistory();
     });
   }
+
+  const viewGuestOrdersBtn = document.getElementById('viewGuestOrdersBtn');
+  if (viewGuestOrdersBtn) {
+    viewGuestOrdersBtn.addEventListener('click', () => {
+      drawerMode = 'orders';
+      renderDrawer();
+      loadOrderHistory();
+    });
+  }
   
   const backToAccountBtn = document.getElementById('backToAccountBtn');
   if (backToAccountBtn) {

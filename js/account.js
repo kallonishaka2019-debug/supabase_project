@@ -6,6 +6,16 @@ let accountDraft = { name: '', email: '', phone: '' };
 let customerOrders = [];
 let orderNotifications = [];
 const loadedInvoices = new Map();
+const GUEST_ORDER_ACCESS_KEY = 'jerseyhub-guest-order-access';
+
+function readGuestOrderTokens() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(GUEST_ORDER_ACCESS_KEY) || '{}');
+    return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+  } catch {
+    return {};
+  }
+}
 
 const PAYMENT_PLANS = {
   full: { label: 'Pay in full', due: 1 },
@@ -161,6 +171,7 @@ function accountStepHtml() {
     <div class="account-body">
       ${accountMessage ? `<p class="account-error" role="alert">${escapeHtml(accountMessage)}</p>` : ''}
       <p class="account-intro">Sign in with your Google account to track orders and checkout faster.</p>
+      ${Object.keys(readGuestOrderTokens()).length ? '<button class="ghost-btn" id="viewGuestOrdersBtn" type="button">View guest orders saved on this browser</button>' : ''}
       <a class="primary-btn" id="googleSignInBtn" href="${API_BASE}/auth/google" style="text-align:center;text-decoration:none;display:block;">Continue with Google</a>
     </div>`;
 }
@@ -186,12 +197,31 @@ async function loadOrderHistory() {
       fetch(`${API_BASE}/orders`, { credentials: 'include' }),
       fetch(`${API_BASE}/orders/notifications`, { credentials: 'include' })
     ]);
-    if (!ordersResponse.ok) throw new Error('Failed to load orders');
-    const [ordersData, notificationsData] = await Promise.all([
-      ordersResponse.json(),
-      notificationsResponse.ok ? notificationsResponse.json() : Promise.resolve({ notifications: [] })
-    ]);
-    renderOrderHistory(content, ordersData.orders || [], notificationsData.notifications || []);
+    let orders = [];
+    if (ordersResponse.ok) {
+      const ordersData = await ordersResponse.json();
+      orders = ordersData.orders || [];
+    } else if (ordersResponse.status !== 401) {
+      const data = await ordersResponse.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to load orders');
+    }
+
+    const guestTokens = readGuestOrderTokens();
+    const guestResponses = await Promise.all(Object.entries(guestTokens).map(async ([orderId, token]) => {
+      const response = await fetch(`${API_BASE}/guest/orders/${encodeURIComponent(orderId)}`, {
+        headers: { 'X-Order-Access-Token': token }
+      });
+      if (response.status === 404) return null;
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Unable to load guest order history');
+      return { ...data.order, guest_access: true };
+    }));
+    orders = [...orders, ...guestResponses.filter(Boolean)]
+      .sort((left, right) => new Date(right.created_at) - new Date(left.created_at));
+    const notificationsData = notificationsResponse.ok
+      ? await notificationsResponse.json()
+      : { notifications: [] };
+    renderOrderHistory(content, orders, notificationsData.notifications || []);
   } catch (error) {
     content.innerHTML = `
       <button class="back-link" id="backToAccountBtn">← Back to account</button>
@@ -271,7 +301,7 @@ function renderOrderCards() {
     return;
   }
   list.innerHTML = orders.map(order => `
-    <article class="order-card">
+    <article class="order-card" data-order-card="${escapeHtml(order.id)}">
       <div class="order-card-header">
         <strong class="order-id">Order #${escapeHtml(order.id)}</strong>
         <span class="order-date">${new Date(order.created_at).toLocaleDateString()}</span>
@@ -294,13 +324,14 @@ function renderOrderCards() {
       </div>
       ${orderTimelineHtml(order)}
       <div class="order-actions">
-        <button class="ghost-btn" type="button" data-invoice="${escapeHtml(order.id)}">Preview invoice</button>
-        <button class="ghost-btn" type="button" data-share="whatsapp" data-order-id="${escapeHtml(order.id)}">WhatsApp</button>
-        <button class="ghost-btn" type="button" data-share="facebook" data-order-id="${escapeHtml(order.id)}">Facebook</button>
-        <button class="ghost-btn" type="button" data-share="x" data-order-id="${escapeHtml(order.id)}">X</button>
-        <button class="ghost-btn" type="button" data-share="telegram" data-order-id="${escapeHtml(order.id)}">Telegram</button>
-        <button class="ghost-btn" type="button" data-share="copy" data-order-id="${escapeHtml(order.id)}">Copy link</button>
-        <button class="ghost-btn" type="button" data-share="native" data-order-id="${escapeHtml(order.id)}">Share…</button>
+        <button class="ghost-btn" type="button" data-invoice="${escapeHtml(order.id)}" data-guest-order="${order.guest_access ? 'true' : 'false'}">Preview invoice</button>
+        ${order.guest_access ? '<span class="order-share-hint">Sign in to create a shareable invoice link.</span>' : `
+          <button class="ghost-btn" type="button" data-share="whatsapp" data-order-id="${escapeHtml(order.id)}">WhatsApp</button>
+          <button class="ghost-btn" type="button" data-share="facebook" data-order-id="${escapeHtml(order.id)}">Facebook</button>
+          <button class="ghost-btn" type="button" data-share="x" data-order-id="${escapeHtml(order.id)}">X</button>
+          <button class="ghost-btn" type="button" data-share="telegram" data-order-id="${escapeHtml(order.id)}">Telegram</button>
+          <button class="ghost-btn" type="button" data-share="copy" data-order-id="${escapeHtml(order.id)}">Copy link</button>
+          <button class="ghost-btn" type="button" data-share="native" data-order-id="${escapeHtml(order.id)}">Share…</button>`}
         <div class="order-share-result" id="shareResult-${escapeHtml(order.id)}" aria-live="polite"></div>
       </div>
     </article>`).join('');
@@ -341,7 +372,17 @@ async function previewOrderInvoice(orderId) {
   panel.hidden = false;
   panel.innerHTML = '<p>Loading invoice…</p>';
   try {
-    const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}/invoice`, { credentials: 'include' });
+    const order = customerOrders.find(item => String(item.id) === String(orderId));
+    const isGuestOrder = Boolean(order?.guest_access);
+    const response = await fetch(
+      `${API_BASE}${isGuestOrder ? '/guest' : ''}/orders/${encodeURIComponent(orderId)}/invoice`,
+      {
+        credentials: isGuestOrder ? 'omit' : 'include',
+        headers: isGuestOrder
+          ? { 'X-Order-Access-Token': readGuestOrderTokens()[String(orderId)] || '' }
+          : undefined
+      }
+    );
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || 'Unable to load invoice');
     loadedInvoices.set(String(orderId), data.invoice);
@@ -550,7 +591,34 @@ async function saveCheckoutOrder() {
     throw new Error(data.error || 'Failed to save order');
   }
 
-  return await response.json();
+  const data = await response.json();
+  if (data.guestAccessToken && data.order?.id) {
+    const guestTokens = readGuestOrderTokens();
+    guestTokens[String(data.order.id)] = data.guestAccessToken;
+    try {
+      localStorage.setItem(GUEST_ORDER_ACCESS_KEY, JSON.stringify(guestTokens));
+    } catch {
+      showError('Order saved, but this browser could not save its private tracking link.');
+    }
+  }
+  if (data.trackingAvailable === false) {
+    showError('Order saved, but tracking needs the server update and Supabase migration. Contact the store if you need your invoice.');
+  }
+  return data;
+}
+
+async function showOrderCompletion(orderId) {
+  const hasGuestToken = Boolean(readGuestOrderTokens()[String(orderId)]);
+  if (!currentAccount && !hasGuestToken) return false;
+  drawerMode = 'orders';
+  renderDrawer();
+  overlay.classList.add('open');
+  drawer.classList.add('open');
+  await loadOrderHistory();
+  const orderCard = document.querySelector(`[data-order-card="${CSS.escape(String(orderId))}"]`);
+  orderCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  orderCard?.querySelector('[data-invoice]')?.click();
+  return Boolean(orderCard);
 }
 
 function paymentPlanLabel() {

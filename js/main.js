@@ -42,6 +42,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       clearCart();
       showInfo('Thank you! Your order is placed. Payment confirmation may take a moment.');
     }
+    const orderId = new URLSearchParams(window.location.search).get('orderId');
+    if (orderId && typeof showOrderCompletion === 'function') {
+      const visible = await showOrderCompletion(orderId);
+      if (!visible && !currentAccount) {
+        showInfo('Your order is saved. Sign in to view account orders, or use this browser again to access this guest order.');
+      }
+    }
     window.history.replaceState({}, '', window.location.pathname);
   }
 });

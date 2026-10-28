@@ -166,6 +166,44 @@ async function loadOrderHistory(orderIds) {
   return data || [];
 }
 
+async function loadGuestOrder(orderId, request) {
+  const token = String(request.get("x-order-access-token") || "");
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return { order: null, error: null };
+  const { data: access, error: accessError } = await supabaseAdmin
+    .from("guest_order_access")
+    .select("order_id, expires_at")
+    .eq("order_id", orderId)
+    .eq("token_hash", hashShareToken(token))
+    .maybeSingle();
+  if (accessError) return { order: null, error: accessError };
+  if (!access || Date.parse(access.expires_at) <= Date.now()) return { order: null, error: null };
+
+  const { data: order, error: orderError } = await supabaseAdmin
+    .from("orders")
+    .select("id, customer_name, customer_phone, delivery_method, delivery_address, payment_method, payment_plan, payment_due, total, note, status, items, estimated_delivery_at, created_at, updated_at")
+    .eq("id", orderId)
+    .is("user_id", null)
+    .maybeSingle();
+  return { order, error: orderError };
+}
+
+async function addOrderTrackingData(order) {
+  const [history, { data: invoice, error: invoiceError }] = await Promise.all([
+    loadOrderHistory([order.id]),
+    supabaseAdmin.from("order_invoices").select("invoice_number").eq("order_id", order.id).single(),
+  ]);
+  if (invoiceError) throw invoiceError;
+  const amounts = calculateInvoiceAmounts({ ...order, status_history: history });
+  return {
+    ...order,
+    invoice_number: invoice.invoice_number,
+    status_history: history,
+    payment_status: amounts.paymentStatus,
+    paid_amount: amounts.paidAmount,
+    balance_due: amounts.balanceDue,
+  };
+}
+
 // Catalog rows saved before the WebP conversion still point at .png files that no longer exist.
 function useWebpImages(product) {
   const toWebp = (value) => (typeof value === "string" ? value.replace(/^(customJersey\/.+)\.png$/, "$1.webp") : value);
@@ -656,7 +694,7 @@ app.post("/api/orders", ensureSupabase, orderIpLimiter, optionalAuth, orderWrite
       items: normalizedItems,
       status: "pending",
     })
-    .select("id, total, status")
+    .select("id, total, status, created_at")
     .single();
 
   if (error) {
@@ -664,7 +702,31 @@ app.post("/api/orders", ensureSupabase, orderIpLimiter, optionalAuth, orderWrite
     return response.status(500).json({ error: "Failed to save order" });
   }
 
-  response.status(201).json({ order });
+  let guestAccessToken = null;
+  let trackingAvailable = true;
+  if (!request.user) {
+    guestAccessToken = crypto.randomBytes(32).toString("base64url");
+    const { error: accessError } = await supabaseAdmin.from("guest_order_access").insert({
+      order_id: order.id,
+      token_hash: hashShareToken(guestAccessToken),
+    });
+    if (accessError) {
+      guestAccessToken = null;
+      trackingAvailable = false;
+      console.error("Guest order tracking is unavailable; apply the order tracking migration.");
+    }
+  }
+  const { data: savedInvoice, error: invoiceError } = await supabaseAdmin
+    .from("order_invoices")
+    .select("invoice_number")
+    .eq("order_id", order.id)
+    .maybeSingle();
+  if (invoiceError || !savedInvoice) {
+    trackingAvailable = false;
+    console.error("Order invoice/history is unavailable; apply the order tracking migration.");
+  }
+
+  response.status(201).json({ order, guestAccessToken, trackingAvailable });
 });
 
 app.get("/api/orders", ensureSupabase, orderIpLimiter, requireAuth, orderReadLimiter, async (request, response) => {
@@ -704,7 +766,9 @@ app.get("/api/orders", ensureSupabase, orderIpLimiter, requireAuth, orderReadLim
     });
     return response.json({ orders: safeOrders });
   } catch {
-    return response.status(500).json({ error: "Failed to load order history" });
+    return response.status(503).json({
+      error: "Order history is not set up yet. The store administrator must apply supabase/migrate_order_tracking.sql.",
+    });
   }
 });
 
@@ -733,6 +797,35 @@ app.post("/api/orders/notifications/:id/read", ensureSupabase, orderIpLimiter, r
   response.status(204).end();
 });
 
+app.get("/api/guest/orders/:id", ensureSupabase, orderIpLimiter, orderReadLimiter, async (request, response) => {
+  const orderId = Number(request.params.id);
+  if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
+  const { order, error } = await loadGuestOrder(orderId, request);
+  if (error) {
+    console.error("Could not load guest order:", error.message);
+    return response.status(503).json({ error: "Order tracking is not available. Please contact the store." });
+  }
+  if (!order) return response.status(404).json({ error: "Order not found or tracking link expired." });
+  try {
+    return response.json({ order: await addOrderTrackingData(order) });
+  } catch {
+    return response.status(503).json({ error: "Order history is not available. Please contact the store." });
+  }
+});
+
+app.get("/api/guest/orders/:id/invoice", ensureSupabase, orderIpLimiter, orderReadLimiter, async (request, response) => {
+  const orderId = Number(request.params.id);
+  if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
+  const { order, error } = await loadGuestOrder(orderId, request);
+  if (error) return response.status(503).json({ error: "Invoice service is unavailable." });
+  if (!order) return response.status(404).json({ error: "Invoice not found or tracking link expired." });
+  try {
+    return response.json({ invoice: await loadInvoice(order) });
+  } catch {
+    return response.status(503).json({ error: "Invoice is not available. Please contact the store." });
+  }
+});
+
 app.get("/api/orders/:id", ensureSupabase, orderIpLimiter, requireAuth, orderReadLimiter, async (request, response) => {
   const orderId = Number(request.params.id);
   if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
@@ -755,7 +848,9 @@ app.get("/api/orders/:id", ensureSupabase, orderIpLimiter, requireAuth, orderRea
       order: { ...safeOrder, invoice_number: invoice.invoice_number, status_history: history },
     });
   } catch {
-    return response.status(500).json({ error: "Failed to load order details" });
+    return response.status(503).json({
+      error: "Order history is not set up yet. The store administrator must apply supabase/migrate_order_tracking.sql.",
+    });
   }
 });
 
@@ -773,7 +868,9 @@ app.get("/api/orders/:id/invoice", ensureSupabase, orderIpLimiter, requireAuth, 
   try {
     return response.json({ invoice: await loadInvoice(order) });
   } catch {
-    return response.status(500).json({ error: "Failed to generate invoice" });
+    return response.status(503).json({
+      error: "Invoice generation is not set up yet. The store administrator must apply supabase/migrate_order_tracking.sql.",
+    });
   }
 });
 

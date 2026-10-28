@@ -24,8 +24,9 @@ The server creates `jerseyhub.sqlite` on first start. It serves the existing sta
 - `PATCH /api/admin/products/:id` (admin only)
 - `DELETE /api/admin/products/:id` (admin only)
 - `DELETE /api/admin/orders/:id` (admin only)
-- `POST /api/orders` (authenticated)
+- `POST /api/orders` (guest or authenticated; guest orders receive a browser-stored access token)
 - `GET /api/orders` (authenticated)
+- `GET /api/guest/orders/:id` and `GET /api/guest/orders/:id/invoice` (guest order token required in `X-Order-Access-Token`)
 - `GET /api/orders/:id` (authenticated owner; includes status history)
 - `GET /api/orders/:id/invoice` (authenticated owner)
 - `POST /api/orders/:id/share-links` and `DELETE /api/orders/:id/share-links/:shareId` (authenticated owner)
@@ -48,8 +49,11 @@ It creates:
 - `public.order_invoices`: unique invoice numbers assigned to orders
 - `public.invoice_share_links`: revocable expiring links; only token hashes are stored
 - `public.order_status_notifications`: deduplicated in-app status notifications
+- `public.guest_order_access`: hashed, expiring browser access tokens for guest orders
 
 The order-tracking migration restricts customer order reads to their own authenticated orders, including excluding guest checkouts. New history, invoice, notification, and share-link tables have RLS enabled without browser policies; the server accesses them with its server-only Supabase secret. Admin status changes and Monime confirmations use a database transition function that audits each change and inserts customer notifications idempotently. API writes reject cross-origin browser requests, and order/share endpoints are rate-limited by IP before authentication and by account after authentication.
+
+After checkout returns, the storefront opens **My Orders**, highlights the just-placed order, and opens its invoice preview. Signed-in customers also receive an in-app order-placed notification. Guest orders can be viewed from the same browser using a random access token stored locally; the database stores only its hash, and the token expires after one year. The order-tracking migration must be applied for invoices, order history, notifications, and guest tracking to be available.
 
 The customer **My Orders** drawer shows order items, history/timeline, delivery estimate, notifications, and invoice preview. **Print / Save PDF** opens the invoice in the browser print dialog; select “Save as PDF” to download a PDF without exposing order details to a third-party PDF service. Social sharing creates a random link that expires after 24 hours by default (up to 168 hours), can be revoked from the order card, and reveals only invoice summary data without customer details or address.
 
