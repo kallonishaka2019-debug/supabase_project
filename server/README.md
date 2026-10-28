@@ -5,7 +5,7 @@
 1. Open a terminal in `server/`.
 2. Run `npm install`.
 3. Copy `.env.example` to `.env` and set the Supabase variables. Use the publishable key for `SUPABASE_PUBLISHABLE_KEY` and the server-only secret key for `SUPABASE_SECRET_KEY`.
-4. For an existing database, run `supabase/migrate_products.sql`, `supabase/migrate_auth_security.sql`, and `supabase/migrate_monime_checkout.sql` in the Supabase SQL Editor. For a brand-new database, run `supabase/schema.sql`. The server seeds the products table automatically on the next start when it is empty.
+4. For a brand-new database, run `supabase/schema.sql`. For an existing database, run any applicable migrations: `supabase/migrate_products.sql`, `supabase/migrate_auth_security.sql`, and `supabase/migrate_monime_checkout.sql`. Then run `supabase/migrate_order_tracking.sql` for both new and existing databases. The server seeds the products table automatically on the next start when it is empty.
 5. Run `npm start`.
 6. Open `http://localhost:3000/jersey.html` or `http://localhost:3000/admin.html`.
 
@@ -26,6 +26,12 @@ The server creates `jerseyhub.sqlite` on first start. It serves the existing sta
 - `DELETE /api/admin/orders/:id` (admin only)
 - `POST /api/orders` (authenticated)
 - `GET /api/orders` (authenticated)
+- `GET /api/orders/:id` (authenticated owner; includes status history)
+- `GET /api/orders/:id/invoice` (authenticated owner)
+- `POST /api/orders/:id/share-links` and `DELETE /api/orders/:id/share-links/:shareId` (authenticated owner)
+- `GET /api/invoice-share/:token` (time-limited public invoice summary only)
+- `GET /api/orders/notifications` and `POST /api/orders/notifications/:id/read` (authenticated owner)
+- `PATCH /api/admin/orders/:id` (admin only; validated status transition and optional delivery estimate)
 
 The server stores order item snapshots and the editable product catalog in Supabase. The first server start after the products migration copies the bundled catalog into `public.products` if the table is empty.
 
@@ -38,8 +44,14 @@ It creates:
 - `auth.users`: Supabase-managed login email, password hash, and sessions
 - `public.profiles`: customer name and phone, linked to `auth.users`
 - `public.orders`: checkout details, totals, payment plan, delivery, and item snapshots
+- `public.order_status_history`: chronological status transitions and actor type
+- `public.order_invoices`: unique invoice numbers assigned to orders
+- `public.invoice_share_links`: revocable expiring links; only token hashes are stored
+- `public.order_status_notifications`: deduplicated in-app status notifications
 
-Row Level Security lets customers read and create only their own profile and orders. The API requires Supabase configuration for authentication and orders.
+The order-tracking migration restricts customer order reads to their own authenticated orders, including excluding guest checkouts. New history, invoice, notification, and share-link tables have RLS enabled without browser policies; the server accesses them with its server-only Supabase secret. Admin status changes and Monime confirmations use a database transition function that audits each change and inserts customer notifications idempotently.
+
+The customer **My Orders** drawer shows order items, history/timeline, delivery estimate, notifications, and invoice preview. **Print / Save PDF** opens the invoice in the browser print dialog; select “Save as PDF” to download a PDF without exposing order details to a third-party PDF service. Social sharing creates a random link that expires after 24 hours by default (up to 168 hours), can be revoked from the order card, and reveals only invoice summary data without customer details or address.
 
 ## Connect the site to Supabase
 

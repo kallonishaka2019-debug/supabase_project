@@ -5,7 +5,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const { createClient } = require("@supabase/supabase-js");
 const { registerAuthRoutes } = require("./auth");
-const { ORDER_STATUSES, calculateInvoiceAmounts, hashShareToken } = require("./order-domain");
+const { ORDER_STATUSES, calculateInvoiceAmounts, hashShareToken, isShareLinkUsable } = require("./order-domain");
 const fs = require("fs");
 const { customizationFee, CUSTOM_NAME_PATTERN, CUSTOM_NUMBER_PATTERN, CUSTOM_MODES } = require("./customization");
 require("dotenv").config();
@@ -94,13 +94,18 @@ async function readCatalogProducts() {
   return error || !data ? products : data.map(useWebpImages);
 }
 
-async function transitionOrderStatus(orderId, status, { actorId = null, note = null } = {}) {
+async function transitionOrderStatus(
+  orderId,
+  status,
+  { actorId = null, note = null, clearEstimatedDeliveryAt = false } = {},
+) {
   const { data, error } = await supabaseAdmin.rpc("transition_order_status", {
     p_order_id: Number(orderId),
     p_status: status,
     p_actor_id: actorId,
     p_note: note,
     p_estimated_delivery_at: null,
+    p_clear_estimated_delivery_at: clearEstimatedDeliveryAt,
   });
   if (error) throw error;
   return data;
@@ -117,15 +122,17 @@ function escapeHtml(value) {
 }
 
 async function loadInvoice(order) {
-  const [{ data: invoice, error: invoiceError }] = await Promise.all([
+  const [{ data: invoice, error: invoiceError }, statusHistory] = await Promise.all([
     supabaseAdmin
       .from("order_invoices")
       .select("invoice_number, created_at")
       .eq("order_id", order.id)
       .single(),
+    loadOrderHistory([order.id]),
   ]);
   if (invoiceError) throw invoiceError;
 
+  const amounts = calculateInvoiceAmounts({ ...order, status_history: statusHistory });
   return {
     invoiceNumber: invoice.invoice_number,
     issuedAt: invoice.created_at,
@@ -143,7 +150,7 @@ async function loadInvoice(order) {
       dueAtCheckout: Number(order.payment_due),
       status: order.status,
     },
-    ...calculateInvoiceAmounts(order),
+    ...amounts,
   };
 }
 
@@ -629,11 +636,18 @@ app.get("/api/orders", ensureSupabase, requireAuth, async (request, response) =>
       historyByOrder.get(entry.order_id).push(entry);
     }
     const invoiceByOrder = new Map((invoices || []).map((invoice) => [invoice.order_id, invoice.invoice_number]));
-    const safeOrders = (orders || []).map(({ monime_session_id, ...order }) => ({
-      ...order,
-      invoice_number: invoiceByOrder.get(order.id) || null,
-      status_history: historyByOrder.get(order.id) || [],
-    }));
+    const safeOrders = (orders || []).map(({ monime_session_id, ...order }) => {
+      const statusHistory = historyByOrder.get(order.id) || [];
+      const amounts = calculateInvoiceAmounts({ ...order, status_history: statusHistory });
+      return {
+        ...order,
+        invoice_number: invoiceByOrder.get(order.id) || null,
+        status_history: statusHistory,
+        payment_status: amounts.paymentStatus,
+        paid_amount: amounts.paidAmount,
+        balance_due: amounts.balanceDue,
+      };
+    });
     return response.json({ orders: safeOrders });
   } catch {
     return response.status(500).json({ error: "Failed to load order history" });
@@ -768,6 +782,7 @@ app.delete("/api/orders/:id/share-links/:shareId", ensureSupabase, requireAuth, 
 });
 
 app.get("/api/invoice-share/:token", async (request, response) => {
+  if (!supabaseAdmin) return response.status(503).send("Invoice sharing is not configured.");
   const token = String(request.params.token || "");
   if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return response.status(404).send("Invoice link is invalid or expired.");
   const { data: link, error } = await supabaseAdmin
@@ -775,7 +790,7 @@ app.get("/api/invoice-share/:token", async (request, response) => {
     .select("id, order_id, expires_at, revoked_at")
     .eq("token_hash", hashShareToken(token))
     .maybeSingle();
-  if (error || !link || link.revoked_at || Date.parse(link.expires_at) <= Date.now()) {
+  if (error || !isShareLinkUsable(link)) {
     return response.status(404).send("Invoice link is invalid or expired.");
   }
   const { data: order, error: orderError } = await supabaseAdmin
@@ -792,7 +807,7 @@ app.get("/api/invoice-share/:token", async (request, response) => {
   if (invoiceError) return response.status(404).send("Invoice link is invalid or expired.");
   let amounts;
   try {
-    amounts = calculateInvoiceAmounts(order);
+    amounts = calculateInvoiceAmounts({ ...order, status_history: await loadOrderHistory([order.id]) });
   } catch {
     return response.status(500).send("Invoice summary is unavailable.");
   }
@@ -834,9 +849,12 @@ app.get("/api/admin/orders", ensureSupabase, requireAdmin, async (request, respo
 
 app.patch("/api/admin/orders/:id", ensureSupabase, requireAdmin, async (request, response) => {
   const orderId = Number(request.params.id);
-  const status = String(request.body?.status || "");
+  const requestedStatus = String(request.body?.status || "");
+  const status = requestedStatus === "fulfilled" ? "delivered" : requestedStatus;
   const note = request.body?.note === undefined ? null : String(request.body.note).trim();
   const estimatedDeliveryAt = request.body?.estimatedDeliveryAt;
+  const clearEstimatedDeliveryAt = Object.hasOwn(request.body || {}, "estimatedDeliveryAt")
+    && (estimatedDeliveryAt === null || estimatedDeliveryAt === "");
   if (!Number.isSafeInteger(orderId) || orderId < 1) return response.status(400).json({ error: "Invalid order id" });
   if (!ORDER_STATUSES.includes(status)) {
     return response.status(400).json({ error: "Invalid status" });
@@ -855,6 +873,7 @@ app.patch("/api/admin/orders/:id", ensureSupabase, requireAdmin, async (request,
       p_actor_id: request.user.id,
       p_note: note,
       p_estimated_delivery_at: deliveryDate,
+      p_clear_estimated_delivery_at: clearEstimatedDeliveryAt,
     });
     if (error) {
       const message = String(error.message || "");
@@ -886,7 +905,11 @@ app.get("/api/admin/stats", ensureSupabase, requireAdmin, async (request, respon
     .from("orders")
     .select("*", { count: "exact", head: true })
     .eq("status", "pending");
-  const { data: revenueRows } = await supabaseAdmin.from("orders").select("total").neq("status", "cancelled");
+  const { data: revenueRows } = await supabaseAdmin
+    .from("orders")
+    .select("total")
+    .neq("status", "cancelled")
+    .neq("status", "refunded");
   const totalRevenue = (revenueRows || []).reduce((sum, row) => sum + Number(row.total || 0), 0);
   const { data: recentOrders } = await supabaseAdmin
     .from("orders")
