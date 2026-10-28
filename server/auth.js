@@ -108,6 +108,13 @@ function registerAuthRoutes(app, { supabaseAuth, supabaseAdmin, supabaseUrl, sup
     });
   }
 
+  function optionalAuth(request, response, next) {
+    if (!request.cookies?.sb_access_token && !request.cookies?.sb_refresh_token) {
+      return next();
+    }
+    return requireAuth(request, response, next);
+  }
+
   app.post("/api/auth/register", ensureSupabase, async (request, response) => {
     const name = String(request.body?.name || "").trim();
     const email = String(request.body?.email || "").trim().toLowerCase();
@@ -289,7 +296,7 @@ function registerAuthRoutes(app, { supabaseAuth, supabaseAdmin, supabaseUrl, sup
     return response.status(204).end();
   });
 
-  return { ensureSupabase, requireAuth, requireAdmin };
+  return { ensureSupabase, optionalAuth, requireAuth, requireAdmin };
 }
 
 module.exports = { registerAuthRoutes };

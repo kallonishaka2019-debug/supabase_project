@@ -61,13 +61,14 @@ async function startAuthServer(t, overrides = {}) {
   const app = express();
   app.use(express.json());
   app.use(cookieParser());
-  const { ensureSupabase, requireAuth } = registerAuthRoutes(app, {
+  const { ensureSupabase, optionalAuth, requireAuth } = registerAuthRoutes(app, {
     supabaseAuth,
     supabaseAdmin,
     appBaseUrl: "https://jersey.example",
     nodeEnv: "production",
   });
   app.get("/protected", ensureSupabase, requireAuth, (request, response) => response.json({ user: request.user }));
+  app.get("/optional", ensureSupabase, optionalAuth, (request, response) => response.json({ user: request.user || null }));
 
   const server = app.listen(0, "127.0.0.1");
   await once(server, "listening");
@@ -189,6 +190,33 @@ test("protected routes reject requests without a session", async (t) => {
 
   assert.equal(response.status, 401);
   assert.match((await response.json()).error, /log in/i);
+});
+
+test("optional authentication preserves guest checkout requests", async (t) => {
+  const { baseUrl } = await startAuthServer(t);
+  const response = await fetch(`${baseUrl}/optional`);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { user: null });
+});
+
+test("optional authentication attaches a verified customer's account", async (t) => {
+  const { baseUrl } = await startAuthServer(t, {
+    getUser: async () => ({ data: { user: { id: "user-1", email: "test@example.com" } }, error: null }),
+  });
+  const response = await fetch(`${baseUrl}/optional`, {
+    headers: { Cookie: "sb_access_token=valid-access-token" },
+  });
+
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).user, {
+    id: "user-1",
+    email: "test@example.com",
+    name: "Test Customer",
+    phone: "076000000",
+    avatar_url: "",
+    is_admin: false,
+  });
 });
 
 test("protected routes refresh expired access tokens", async (t) => {

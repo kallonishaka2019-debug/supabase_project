@@ -272,7 +272,7 @@ app.use("/api", (request, response, next) => {
   return next();
 });
 
-const { ensureSupabase, requireAuth, requireAdmin } = registerAuthRoutes(app, {
+const { ensureSupabase, optionalAuth, requireAuth, requireAdmin } = registerAuthRoutes(app, {
   supabaseAuth,
   supabaseAdmin,
   supabaseUrl,
@@ -563,7 +563,7 @@ app.all("/api/payments/return", async (request, response) => {
   return response.redirect(303, resultUrl.toString());
 });
 
-app.post("/api/orders", ensureSupabase, async (request, response) => {
+app.post("/api/orders", ensureSupabase, orderIpLimiter, optionalAuth, orderWriteLimiter, async (request, response) => {
   const { items, deliveryMethod, paymentMethod, paymentPlan, deliveryAddress = "", address = "", note = "" } = request.body || {};
   if (!Array.isArray(items) || items.length === 0) {
     return response.status(400).json({ error: "At least one item is required" });
