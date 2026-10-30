@@ -378,7 +378,7 @@ async function handlePlaceOrder() {
     const savedOrder = await saveCheckoutOrder();
     lastOrderNumber = Number(savedOrder?.order?.id ?? savedOrder?.id ?? Math.floor(1000 + Math.random() * 9000));
     renderDrawer();
-    showSuccess('✓ Order added');
+    showSuccess('Order added');
   } catch (error) {
     placeOrderBtn.disabled = false;
     placeOrderBtn.textContent = 'Make payment';

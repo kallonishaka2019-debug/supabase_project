@@ -176,5 +176,5 @@ function addCustomizedToCart() {
   invalidatePendingMonimeOrder();
   persistCart();
   updateCartCount();
-  showSuccess('✓ Customized jersey added to cart');
+  showSuccess('Customized jersey added to cart');
 }

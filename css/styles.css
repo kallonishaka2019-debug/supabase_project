@@ -705,7 +705,7 @@ footer {
 }
 .card:hover {
   transform: translateY(-4px);
-  box-shadow: 6px 6px 0 var(--ink);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 .card-num,
 .availability,
@@ -1115,7 +1115,7 @@ footer p {
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 .toast.success {
-  background: var(--success);
+  background: #1f6feb;
 }
 .toast.error {
   background: var(--error);
@@ -1567,7 +1567,7 @@ footer p {
   color: #fff;
 }
 :root[data-theme="dark"] .toast.success {
-  background: var(--success);
+  background: #1f6feb;
 }
 :root[data-theme="dark"] .toast.error {
   background: var(--error);
@@ -1654,4 +1654,9 @@ footer p {
 .cz-font.active {
   border-color: var(--ink);
   box-shadow: 0 0 0 1px var(--ink);
+}
+
+.card:focus,
+.card *:focus:not(:focus-visible) {
+  outline: none;
 }
