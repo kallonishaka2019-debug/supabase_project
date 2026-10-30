@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupCatalogFilters();
   setupPagination();
   setupSizeGuide();
+  setupCustomizeModal();
 
   // Show the bundled catalog immediately; the API result (slow on a cold start) only refreshes it.
   renderGrid();
