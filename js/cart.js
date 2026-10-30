@@ -55,7 +55,7 @@ function addToCart(productId, size) {
   }
   persistCart();
   updateCartCount();
-  showSuccess(product && isProductAvailable(product) ? '✓ Added to cart' : '✓ Order request added');
+  showSuccess(product && isProductAvailable(product) ? 'Added to cart' : 'Order request added');
 }
 
 function sanitizeCustomName(value) {
