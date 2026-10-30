@@ -47,7 +47,7 @@ function jerseySvg(p, size = 64) {
     <path d="M30 8 L10 22 L18 38 L28 32 L28 92 L72 92 L72 32 L82 38 L90 22 L70 8 L60 14 Q50 20 40 14 Z"
       fill="${p.color}" stroke="${p.stripe}" stroke-width="3"/>
     ${nameText ? `<text x="50" y="52" font-family="${fontFamily}" font-size="11" fill="${nameColor}" text-anchor="middle" letter-spacing="0.5">${nameText}</text>` : ''}
-    ${numberVal !== '' ? `<text x="50" y="${nameText ? 68 : 60}" font-family="${fontFamily}" font-size="26" fill="${nameColor}" text-anchor="middle">${numberVal}</text>` : ''}
+    ${numberVal !== '' ? `<text x="50" y="${nameText ? 72 : 60}" font-family="${fontFamily}" font-size="26" fill="${nameColor}" text-anchor="middle">${numberVal}</text>` : ''}
   </svg>`;
 }
 
@@ -178,12 +178,6 @@ function cartStepHtml() {
     const p = getCartProduct(item);
     const isAvailable = isProductAvailable(p);
     const itemPrice = p ? p.price * item.qty : 0;
-    const mode = customMode(item);
-    const modeKey = `${item.productId}-${item.size}`;
-    const modeOptions = [['name', 'Name only'], ['number', 'Number only'], ['both', 'Name &amp; number']].map(([value, label]) => `
-                <label class="radio-opt ${mode === value ? 'active' : ''}">
-                  <input type="radio" name="customMode-${modeKey}" value="${value}" ${mode === value ? 'checked' : ''} data-custom-mode="${item.productId}" data-size="${item.size}"> ${label}
-                </label>`).join('');
     return `
       <div class="line-item ${isAvailable ? '' : 'line-item-unavailable'}">
         <div class="li-thumb">${jerseyVisual(p)}</div>
@@ -199,26 +193,7 @@ function cartStepHtml() {
           </div>
         </div>
         <div class="li-price" data-line-price="${item.productId}" data-size="${item.size}">${CURRENCY} ${itemPrice}</div>
-        <div class="li-custom ${item.customized ? 'active' : ''}">
-          <button class="li-custom-toggle-btn" type="button" data-customize-toggle="${item.productId}" data-size="${item.size}">
-            ${item.customized ? 'Remove customization' : `Customize with name &amp; number (${CURRENCY} ${CUSTOM_PRICE_PER_LETTER} per letter · ${CURRENCY} ${CUSTOM_PRICE_PER_DIGIT} per digit)`}
-          </button>
-          ${item.customized ? `
-            <div class="radio-row li-custom-modes">${modeOptions}
-            </div>
-            <div class="li-custom-fields">
-              ${mode !== 'number' ? `<div class="li-custom-field">
-                <label for="customName-${item.productId}-${item.size}">Name</label>
-                <input id="customName-${item.productId}-${item.size}" type="text" maxlength="${CUSTOM_NAME_MAX_LENGTH}" placeholder="e.g. KAMARA" value="${escapeHtml(item.customName)}" data-custom-field="customName" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
-              </div>` : ''}
-              ${mode !== 'name' ? `<div class="li-custom-field li-custom-number">
-                <label for="customNumber-${item.productId}-${item.size}">Number</label>
-                <input id="customNumber-${item.productId}-${item.size}" type="text" inputmode="numeric" maxlength="${CUSTOM_NUMBER_MAX_LENGTH}" placeholder="0-99" value="${escapeHtml(item.customNumber)}" data-custom-field="customNumber" data-custom-id="${item.productId}" data-size="${item.size}" autocomplete="off">
-              </div>` : ''}
-            </div>
-            <p class="li-custom-note" data-custom-breakdown="${item.productId}" data-size="${item.size}">${escapeHtml(customizationBreakdownText(item))}</p>
-            ${item.qty > 1 ? `<p class="li-custom-note">Applies to all ${item.qty} jerseys on this line.</p>` : ''}` : ''}
-        </div>
+        ${item.customized ? `<div class="li-custom active"><p class="li-custom-note">${escapeHtml(customizationBreakdownText(item))}</p></div>` : ''}
       </div>`;
   }).join('');
   
