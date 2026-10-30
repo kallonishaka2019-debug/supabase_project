@@ -1,4 +1,4 @@
-const customizeState = { clubName: null, productId: null, size: 'M', name: '', number: '' };
+const customizeState = { clubName: null, productId: null, size: 'M', name: '', number: '', color: 'gold', font: 'classic' };
 
 function customizeMode(state) {
   const hasName = state.name.trim() !== '';
@@ -14,14 +14,15 @@ function customizerKits() {
 function customizePreviewHtml(product) {
   const { name, number } = customizeState;
   if (product.image && product.backImage && product.backImage !== product.image) {
-    const color = product.textColor || product.stripe || '#ffffff';
+    const color = CUSTOM_COLORS[customizeState.color].value;
+    const font = CUSTOM_FONTS[customizeState.font].family;
     return `<div class="cz-photo">
       <img src="${product.backImage}" alt="${escapeHtml(product.club)} ${escapeHtml(product.kit)} jersey back">
-      <span class="cz-name" style="color:${color}">${escapeHtml(name.toUpperCase())}</span>
-      <span class="cz-number" style="color:${color}">${escapeHtml(number)}</span>
+      <span class="cz-name" style="color:${color};font-family:${font}">${escapeHtml(name.toUpperCase())}</span>
+      <span class="cz-number" style="color:${color};font-family:${font}">${escapeHtml(number)}</span>
     </div>`;
   }
-  return jerseySvg({ ...product, customName: name, customNumber: number });
+  return jerseySvg({ ...product, customName: name, customNumber: number, customStyle: customizeState.font, customNameColor: CUSTOM_COLORS[customizeState.color].value });
 }
 
 function customizeSummary(product) {
@@ -87,6 +88,18 @@ function renderCustomizer() {
           </div>
           <p class="li-custom-note" id="czBreakdown"></p>
         </div>
+        <div class="cz-group">
+          <div class="cz-label">Colour</div>
+          <div class="cz-swatches" id="czColors">
+            ${Object.entries(CUSTOM_COLORS).map(([key, c]) => `<button type="button" class="cz-swatch ${key === customizeState.color ? 'active' : ''}" data-cz-color="${key}" style="background:${c.value}" aria-label="${c.label}" aria-pressed="${key === customizeState.color}" title="${c.label}"></button>`).join('')}
+          </div>
+        </div>
+        <div class="cz-group">
+          <div class="cz-label">Font</div>
+          <div class="cz-fonts" id="czFonts">
+            ${Object.entries(CUSTOM_FONTS).map(([key, f]) => `<button type="button" class="cz-font ${key === customizeState.font ? 'active' : ''}" data-cz-font="${key}" style="font-family:${f.family}" aria-pressed="${key === customizeState.font}">${f.label}</button>`).join('')}
+          </div>
+        </div>
         <div class="cz-subtotal"><span>Subtotal</span><strong id="czTotal"></strong></div>
         <button type="button" class="btn btn--primary add-btn" id="czAddBtn">Add to cart</button>
       </div>
@@ -118,13 +131,27 @@ function renderCustomizer() {
     customizeState.number = e.target.value;
     refreshCustomizer();
   });
+  document.getElementById('czColors').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-cz-color]');
+    if (!btn) return;
+    customizeState.color = btn.dataset.czColor;
+    document.querySelectorAll('#czColors .cz-swatch').forEach(b => b.classList.toggle('active', b === btn));
+    refreshCustomizer();
+  });
+  document.getElementById('czFonts').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-cz-font]');
+    if (!btn) return;
+    customizeState.font = btn.dataset.czFont;
+    document.querySelectorAll('#czFonts .cz-font').forEach(b => b.classList.toggle('active', b === btn));
+    refreshCustomizer();
+  });
   document.getElementById('czAddBtn').addEventListener('click', addCustomizedToCart);
 
   refreshCustomizer();
 }
 
 function addCustomizedToCart() {
-  const { productId, size, name, number } = customizeState;
+  const { productId, size, name, number, color, font } = customizeState;
   if (name.trim() === '' && number === '') {
     showError('Enter a name and/or select a number');
     return;
@@ -136,6 +163,7 @@ function addCustomizedToCart() {
   const existing = findCartItem(productId, size);
   if (existing) {
     const same = existing.customized && customMode(existing) === mode
+      && (existing.customColor || 'gold') === color && (existing.customFont || 'classic') === font
       && (existing.customName || '') === customName && String(existing.customNumber ?? '') === customNumber;
     if (!same) {
       showError(`This kit in size ${size} is already in your cart. Remove it first or pick another size.`);
@@ -143,7 +171,7 @@ function addCustomizedToCart() {
     }
     existing.qty += 1;
   } else {
-    cart.push({ productId, size, qty: 1, customized: true, customName, customNumber, customMode: mode });
+    cart.push({ productId, size, qty: 1, customized: true, customName, customNumber, customMode: mode, customColor: color, customFont: font });
   }
   invalidatePendingMonimeOrder();
   persistCart();

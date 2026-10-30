@@ -63,46 +63,6 @@ function setupCatalogFilters() {
   
   populateTeamFilter('all');
 
-  const refreshCatalog = () => {
-    currentPage = 1;
-    renderGrid();
-    updatePagination();
-  };
-
-  const searchToggle = document.getElementById('searchToggle');
-  const searchInput = document.getElementById('searchInput');
-  const searchBar = document.getElementById('searchBar');
-  const setSearchExpanded = (expanded) => {
-    searchBar.hidden = !expanded;
-    searchToggle.setAttribute('aria-expanded', String(expanded));
-    searchToggle.setAttribute('aria-label', expanded ? 'Close jersey search' : 'Open jersey search');
-    if (expanded) searchInput.focus();
-  };
-  const clearSearch = () => {
-    searchInput.value = '';
-    catalogFilters.query = '';
-    refreshCatalog();
-  };
-
-  searchInput?.addEventListener('input', (e) => {
-    catalogFilters.query = e.target.value;
-    refreshCatalog();
-  });
-  searchToggle?.addEventListener('click', () => {
-    const expanded = searchToggle.getAttribute('aria-expanded') === 'true';
-    if (expanded) clearSearch();
-    setSearchExpanded(!expanded);
-    if (!expanded) document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
-  });
-  searchInput?.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      clearSearch();
-      setSearchExpanded(false);
-      searchToggle.focus();
-    }
-  });
-
   leagueFilter.addEventListener('change', (e) => {
     catalogFilters.league = e.target.value;
     catalogFilters.team = 'all';
