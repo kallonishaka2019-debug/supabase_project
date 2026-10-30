@@ -799,7 +799,9 @@
       function customLabel(item) {
         const name = String(item.customName ?? "").trim();
         const number = String(item.customNumber ?? "").trim();
-        return [name, number ? `#${number}` : ""].filter(Boolean).join(" ");
+        const cap = (value) => String(value ?? "").trim().replace(/^./, (c) => c.toUpperCase());
+        const style = [cap(item.customColor), cap(item.customFont)].filter(Boolean).join(" ");
+        return [name, number ? `#${number}` : "", style ? `(${style})` : ""].filter(Boolean).join(" ");
       }
 
       function deliveryMethodOf(order) {
