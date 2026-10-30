@@ -67,8 +67,15 @@ function renderGrid() {
   const grid = document.getElementById('productGrid');
   if (!grid) return;
   
-  const { products } = getPaginatedProducts();
+  const { products, total } = getPaginatedProducts();
+  const resultCount = document.getElementById('resultCount');
+  if (resultCount) resultCount.textContent = `${total} ${total === 1 ? 'jersey' : 'jerseys'}`;
   
+  if (products.length === 0) {
+    grid.innerHTML = '<p class="no-results">No jerseys match your search. Try a different club or clear the filters.</p>';
+    return;
+  }
+
   grid.innerHTML = products.map(p => {
     const size = selectedSizeGlobal[p.id] || 'M';
     const isAvailable = isProductAvailable(p);
@@ -88,7 +95,7 @@ function renderGrid() {
           <div class="price-row">
             <span class="price">${CURRENCY} ${p.price}${p.sale ? `<span class="strike">${CURRENCY} ${p.sale}</span>` : ''}</span>
           </div>
-          <button class="add-btn ${isAvailable ? '' : 'request-btn'}" data-add="${p.id}">${isAvailable ? 'Add to cart' : 'Order this kit'}</button>
+          <button class="add-btn btn ${isAvailable ? 'btn--primary' : 'btn--secondary request-btn'}" data-add="${p.id}">${isAvailable ? 'Add to cart' : 'Order this kit'}</button>
         </div>
       </div>`;
   }).join('');

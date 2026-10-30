@@ -1,8 +1,12 @@
-let catalogFilters = { league: 'all', team: 'all' };
+let catalogFilters = { league: 'all', team: 'all', query: '', inStockOnly: false };
 let currentPage = 1;
 
 function filterProducts() {
-  let filtered = [...PRODUCTS];
+  let filtered = searchProducts(catalogFilters.query);
+
+  if (catalogFilters.inStockOnly) {
+    filtered = filtered.filter(isProductAvailable);
+  }
   
   if (catalogFilters.league !== 'all') {
     filtered = filtered.filter(p => LEAGUE_BY_CLUB[p.club] === catalogFilters.league);
@@ -62,6 +66,24 @@ function setupCatalogFilters() {
   }
   
   populateTeamFilter('all');
+
+  const refreshCatalog = () => {
+    currentPage = 1;
+    renderGrid();
+    updatePagination();
+  };
+
+  document.getElementById('searchInput')?.addEventListener('input', (e) => {
+    catalogFilters.query = e.target.value;
+    refreshCatalog();
+  });
+
+  const stockChip = document.getElementById('inStockChip');
+  stockChip?.addEventListener('click', () => {
+    catalogFilters.inStockOnly = !catalogFilters.inStockOnly;
+    stockChip.setAttribute('aria-pressed', String(catalogFilters.inStockOnly));
+    refreshCatalog();
+  });
   
   leagueFilter.addEventListener('change', (e) => {
     catalogFilters.league = e.target.value;

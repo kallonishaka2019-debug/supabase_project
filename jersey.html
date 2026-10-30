@@ -11,14 +11,15 @@
       href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;1,700&family=Barlow+Condensed:ital,wght@1,800&family=Lora:wght@400;700&family=Caveat:wght@700&family=Roboto:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/styles.css?v=20261022-1" />
+    <link rel="stylesheet" href="css/ebay-skin.css?v=19.38.0" />
+    <link rel="stylesheet" href="css/styles.css?v=20261030-1" />
     <script>
       window.API_BASE_URL = "/api";
       window.WHATSAPP_NUMBER = "23278952429";
       window.MONIME_RECIPIENT = "+23278952429";
     </script>
   </head>
-  <body>
+  <body class="evo-theme">
     <header>
       <div class="header-inner">
         <div class="logo">
@@ -31,7 +32,7 @@
             rel="noopener"
             >Contact</a
           >
-          <button class="cart-btn" id="openCartBtn" aria-label="Open cart">
+          <button class="cart-btn btn btn--primary" id="openCartBtn" aria-label="Open cart">
             Cart <span class="cart-count" id="cartCount">0</span>
           </button>
           <button
@@ -71,19 +72,35 @@
           Size Guide
         </button>
       </div>
-      <div class="shop-filters" aria-label="Filter jerseys">
+      <div class="shop-filters" role="search" aria-label="Filter jerseys">
+        <label class="shop-search" for="searchInput">
+          Search
+          <span class="textbox">
+            <input
+              class="textbox__control"
+              id="searchInput"
+              type="search"
+              placeholder="Club, kit or league"
+              autocomplete="off"
+            />
+          </span>
+        </label>
         <label for="leagueFilter">
           League
-          <select id="leagueFilter">
+          <span class="select"><select id="leagueFilter">
             <option value="all">All leagues</option>
-          </select>
+          </select><svg class="icon icon--12" aria-hidden="true" focusable="false" viewBox="0 0 12 12"><path d="M1.5 4l4.5 4.5L10.5 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
         </label>
         <label for="teamFilter">
           Team
-          <select id="teamFilter">
+          <span class="select"><select id="teamFilter">
             <option value="all">All teams</option>
-          </select>
+          </select><svg class="icon icon--12" aria-hidden="true" focusable="false" viewBox="0 0 12 12"><path d="M1.5 4l4.5 4.5L10.5 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
         </label>
+        <button class="selection-chip" id="inStockChip" type="button" aria-pressed="false">
+          <span class="selection-chip__text">In stock only</span>
+        </button>
+        <div class="shop-result-count" id="resultCount" aria-live="polite"></div>
       </div>
       <div class="grid" id="productGrid"></div>
       <div class="pagination" id="pagination"></div>
