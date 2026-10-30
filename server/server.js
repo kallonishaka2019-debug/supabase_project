@@ -6,7 +6,7 @@ const cookieParser = require("cookie-parser");
 const { createClient } = require("@supabase/supabase-js");
 const { registerAuthRoutes } = require("./auth");
 const fs = require("fs");
-const { customizationFee, CUSTOM_NAME_PATTERN, CUSTOM_NUMBER_PATTERN, CUSTOM_MODES } = require("./customization");
+const { customizationFee, CUSTOM_NAME_PATTERN, CUSTOM_NUMBER_PATTERN, CUSTOM_MODES, CUSTOM_FONTS, CUSTOM_COLORS, DEFAULT_CUSTOM_FONT, DEFAULT_CUSTOM_COLOR } = require("./customization");
 require("dotenv").config();
 
 const app = express();
@@ -473,6 +473,8 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
     const rawNumber = String(item.customNumber ?? item.custom_number ?? "").trim();
     const customName = custom && customMode !== "number" ? rawName : null;
     const customNumber = custom && customMode !== "name" ? rawNumber : null;
+    const rawFont = String(item.customFont ?? item.custom_font ?? DEFAULT_CUSTOM_FONT);
+    const rawColor = String(item.customColor ?? item.custom_color ?? DEFAULT_CUSTOM_COLOR);
     const customFee = custom ? customizationFee(customName, customNumber) : 0;
     return {
       productId: product?.id ?? productId,
@@ -485,6 +487,8 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
       customName,
       customNumber,
       customMode: custom ? customMode : null,
+      customFont: custom ? rawFont : null,
+      customColor: custom ? rawColor : null,
       customFee,
     };
   });
@@ -496,6 +500,8 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
       !catalog.some((product) => String(product.id) === String(item.productId)) ||
       (item.custom && (
         item.customMode === "invalid" ||
+        !CUSTOM_FONTS.includes(item.customFont) ||
+        !CUSTOM_COLORS.includes(item.customColor) ||
         (item.customName === null && item.customNumber === null) ||
         (item.customName !== null && !CUSTOM_NAME_PATTERN.test(item.customName)) ||
         (item.customNumber !== null && !CUSTOM_NUMBER_PATTERN.test(item.customNumber)) ||
