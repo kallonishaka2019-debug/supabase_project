@@ -414,6 +414,28 @@ function setupGlobalEvents() {
   if (overlay) {
     overlay.addEventListener('click', closeDrawer);
   }
+
+  const menuToggle = document.getElementById('menuToggle');
+  const headerMenu = document.getElementById('headerMenu');
+  const setMenuOpen = (open) => {
+    headerMenu.hidden = !open;
+    menuToggle.setAttribute('aria-expanded', String(open));
+    menuToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  };
+
+  menuToggle?.addEventListener('click', () => {
+    setMenuOpen(menuToggle.getAttribute('aria-expanded') !== 'true');
+  });
+  document.getElementById('menuShopLink')?.addEventListener('click', () => setMenuOpen(false));
+  document.getElementById('menuSizeGuideBtn')?.addEventListener('click', () => {
+    setMenuOpen(false);
+    document.getElementById('sizeGuideModal')?.classList.add('open');
+  });
+  document.addEventListener('click', (event) => {
+    if (!headerMenu.hidden && !headerMenu.contains(event.target) && !menuToggle.contains(event.target)) {
+      setMenuOpen(false);
+    }
+  });
   
   const openCartBtn = document.getElementById('openCartBtn');
   if (openCartBtn) {
@@ -428,8 +450,13 @@ function setupGlobalEvents() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeDrawer();
+      if (headerMenu && !headerMenu.hidden) setMenuOpen(false);
       const sizeGuideModal = document.getElementById('sizeGuideModal');
       if (sizeGuideModal) sizeGuideModal.classList.remove('open');
+      const searchToggle = document.getElementById('searchToggle');
+      if (searchToggle?.getAttribute('aria-expanded') === 'true') {
+        searchToggle.click();
+      }
     }
   });
 }

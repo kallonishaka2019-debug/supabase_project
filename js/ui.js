@@ -161,6 +161,41 @@ function refreshCartTotals() {
   if (total) total.textContent = `${CURRENCY} ${grandTotal()}`;
 }
 
+function customizationDetailsHtml(item) {
+  const mode = customMode(item);
+  const name = mode === 'number' ? '' : String(item.customName || '').trim();
+  const number = mode === 'name' ? '' : String(item.customNumber ?? '').trim();
+  return `<div class="checkout-customization">
+    <span>Name: <strong>${escapeHtml(name || '—')}</strong></span>
+    <span>Number: <strong>${number ? `#${escapeHtml(number)}` : '—'}</strong></span>
+  </div>`;
+}
+
+function checkoutProgressHtml(step) {
+  const steps = [['details', 'Details'], ['confirm', 'Review'], ['payment', 'Payment']];
+  return `<ol class="checkout-progress" aria-label="Checkout progress">${steps.map(([id, label], index) => `
+    <li class="${id === step ? 'active' : ''} ${steps.findIndex(([stepId]) => stepId === step) > index ? 'complete' : ''}" ${id === step ? 'aria-current="step"' : ''}>
+      <span>${index + 1}</span>${label}
+    </li>`).join('')}</ol>`;
+}
+
+function checkoutItemsSummaryHtml() {
+  return `<section class="summary-block">
+    <h4>Your items</h4>
+    ${cart.map(item => {
+      const product = getCartProduct(item);
+      return `<div class="checkout-item">
+        <div class="checkout-item-info">
+          <strong>${escapeHtml(product.club)} · ${escapeHtml(product.kit)}</strong>
+          <span>Size ${escapeHtml(item.size)} · Quantity ${item.qty}</span>
+          ${item.customized ? customizationDetailsHtml(item) : ''}
+        </div>
+        <strong>${CURRENCY} ${product.price * item.qty}</strong>
+      </div>`;
+    }).join('')}
+  </section>`;
+}
+
 function cartStepHtml() {
   if (cart.length === 0) {
     return `
@@ -193,7 +228,7 @@ function cartStepHtml() {
           </div>
         </div>
         <div class="li-price" data-line-price="${item.productId}" data-size="${item.size}">${CURRENCY} ${itemPrice}</div>
-        ${item.customized ? `<div class="li-custom active"><p class="li-custom-note">${escapeHtml(customizationBreakdownText(item))}</p></div>` : ''}
+        ${item.customized ? `<div class="li-custom active">${customizationDetailsHtml(item)}<p class="li-custom-note">${escapeHtml(customizationBreakdownText(item))}</p></div>` : ''}
       </div>`;
   }).join('');
   
@@ -232,17 +267,19 @@ function detailsStepHtml() {
       <h3 class="display">Checkout</h3>
       <button class="close-btn" id="closeBtn">×</button>
     </div>
+    ${checkoutProgressHtml('details')}
     <div class="drawer-body">
       <button class="back-link" id="backToCartBtn">← Back to cart</button>
-      <span class="step-label">Step 1 of 3 — Your details</span>
+      <span class="step-label">Your details</span>
+      ${checkoutItemsSummaryHtml()}
       
       <div class="field">
         <label for="fName">Full name</label>
-        <input id="fName" type="text" value="${window.customer?.name || ''}" placeholder="Full name">
+        <input id="fName" type="text" value="${escapeHtml(window.customer?.name || '')}" placeholder="Full name" autocomplete="name" required>
       </div>
       <div class="field">
         <label for="fPhone">Phone</label>
-        <input id="fPhone" type="tel" value="${window.customer?.phone || ''}" placeholder="e.g. 076 000 000">
+        <input id="fPhone" type="tel" value="${escapeHtml(window.customer?.phone || '')}" placeholder="e.g. 076 000 000" autocomplete="tel" inputmode="tel" required>
       </div>
       <div class="field">
         <label>Delivery method</label>
@@ -260,7 +297,7 @@ function detailsStepHtml() {
       </div>
       <div class="field" id="addressField" style="${isDelivery ? '' : 'display:none;'}">
         <label for="fAddress">Delivery address *</label>
-        <textarea id="fAddress" placeholder="Street, area, landmark">${window.customer?.address || ''}</textarea>
+        <textarea id="fAddress" placeholder="Street, area, landmark" autocomplete="street-address">${escapeHtml(window.customer?.address || '')}</textarea>
       </div>
     </div>
     <div class="drawer-foot">
@@ -285,9 +322,16 @@ function confirmStepHtml() {
         <div class="summary-block">
           ${cart.map(item => {
             const p = getCartProduct(item);
-            const label = item.customized ? `${p.club} · ${escapeHtml(customizationLabel(item))}` : `${p.club}`;
             const fee = itemCustomizationFee(item);
-            return `<div class="li-row"><span>${label} (${item.size}) ×${item.qty}${fee ? ` · incl. customization ${CURRENCY} ${fee * item.qty}` : ''}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
+            return `<div class="checkout-item">
+              <div class="checkout-item-info">
+                <strong>${escapeHtml(p.club)} · ${escapeHtml(p.kit)}</strong>
+                <span>Size ${escapeHtml(item.size)} · Quantity ${item.qty}</span>
+                ${item.customized ? customizationDetailsHtml(item) : ''}
+                ${fee ? `<span class="checkout-item-note">Customization: ${CURRENCY} ${fee * item.qty}</span>` : ''}
+              </div>
+              <strong>${CURRENCY} ${p.price * item.qty}</strong>
+            </div>`;
           }).join('')}
           <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
             <span>Total</span><span>${CURRENCY} ${grandTotal()}</span>
@@ -306,26 +350,34 @@ function confirmStepHtml() {
       <h3 class="display">Review Order</h3>
       <button class="close-btn" id="closeBtn">×</button>
     </div>
+    ${checkoutProgressHtml('confirm')}
     <div class="drawer-body">
       <button class="back-link" id="backToDetailsBtn">← Back to details</button>
-      <span class="step-label">Step 2 of 3 — Review</span>
+      <span class="step-label">Review your order</span>
       <div class="summary-block">
         ${cart.map(item => {
           const p = getCartProduct(item);
-          const label = item.customized ? `${p.club} · ${escapeHtml(customizationLabel(item))}` : `${p.club}`;
-            const fee = itemCustomizationFee(item);
-          return `<div class="li-row"><span>${label} (${item.size}) ×${item.qty}${fee ? ` · incl. customization ${CURRENCY} ${fee * item.qty}` : ''}</span><span>${CURRENCY} ${p.price * item.qty}</span></div>`;
+          const fee = itemCustomizationFee(item);
+          return `<div class="checkout-item">
+            <div class="checkout-item-info">
+              <strong>${escapeHtml(p.club)} · ${escapeHtml(p.kit)}</strong>
+              <span>Size ${escapeHtml(item.size)} · Quantity ${item.qty}</span>
+              ${item.customized ? customizationDetailsHtml(item) : ''}
+              ${fee ? `<span class="checkout-item-note">Customization: ${CURRENCY} ${fee * item.qty}</span>` : ''}
+            </div>
+            <strong>${CURRENCY} ${p.price * item.qty}</strong>
+          </div>`;
         }).join('')}
-        <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
-          <span>Total</span><span>${CURRENCY} ${grandTotal()}</span>
-        </div>
+        <div class="checkout-total-row"><span>Subtotal</span><strong>${CURRENCY} ${cartTotal()}</strong></div>
+        ${window.customer?.delivery === 'delivery' ? `<div class="checkout-total-row"><span>Delivery</span><strong>${CURRENCY} ${deliveryCost()}</strong></div>` : `<div class="checkout-total-row"><span>Pickup</span><strong>Free</strong></div>`}
+        <div class="checkout-total-row grand"><span>Total</span><strong>${CURRENCY} ${grandTotal()}</strong></div>
       </div>
       <div class="summary-block">
-        <div class="li-row"><span>Name</span><span>${window.customer?.name || '—'}</span></div>
-        <div class="li-row"><span>Phone</span><span>${window.customer?.phone || '—'}</span></div>
-        <div class="li-row"><span>Delivery</span><span style="text-transform:capitalize;">${window.customer?.delivery || 'pickup'}</span></div>
-        ${window.customer?.delivery !== 'pickup' ? `<div class="li-row"><span>Address</span><span>${window.customer?.address || '—'}</span></div>` : `<div class="li-row"><span>Pickup address</span><span>${DELIVERY_OPTIONS.pickup.address}</span></div>`}
-        ${window.customer?.delivery === 'delivery' ? `<div class="li-row"><span>Delivery cost</span><span>${CURRENCY} ${deliveryCost()}</span></div>` : ''}
+        <h4>Contact &amp; fulfillment</h4>
+        <div class="li-row"><span>Name</span><span>${escapeHtml(window.customer?.name || '—')}</span></div>
+        <div class="li-row"><span>Phone</span><span>${escapeHtml(window.customer?.phone || '—')}</span></div>
+        <div class="li-row"><span>Delivery</span><span style="text-transform:capitalize;">${escapeHtml(window.customer?.delivery || 'pickup')}</span></div>
+        ${window.customer?.delivery !== 'pickup' ? `<div class="li-row"><span>Address</span><span>${escapeHtml(window.customer?.address || '—')}</span></div>` : `<div class="li-row"><span>Pickup address</span><span>${escapeHtml(DELIVERY_OPTIONS.pickup.address)}</span></div>`}
       </div>
     </div>
     <div class="drawer-foot">
@@ -341,9 +393,10 @@ function paymentStepHtml() {
       <h3 class="display">Make Payment</h3>
       <button class="close-btn" id="closeBtn">×</button>
     </div>
+    ${checkoutProgressHtml('payment')}
     <div class="drawer-body">
       <button class="back-link" id="backToReviewBtn">← Back to review</button>
-      <span class="step-label">Step 3 of 3 — Make payment</span>
+      <span class="step-label">Secure payment</span>
       <div class="field">
         <label>Payment method</label>
         <div class="payment-method-card">
@@ -355,6 +408,7 @@ function paymentStepHtml() {
           <span class="payment-method-check" aria-label="Selected">✓</span>
         </div>
       </div>
+      ${checkoutItemsSummaryHtml()}
     </div>
     <div class="drawer-foot">
       <div class="total-row"><span>Total</span><span class="display">${CURRENCY} ${grandTotal()}</span></div>

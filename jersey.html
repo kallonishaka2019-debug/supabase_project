@@ -25,13 +25,24 @@
         <div class="logo">
           <span class="display">JerseyHub</span>
         </div>
+        <button
+          class="icon-btn menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-label="Open menu"
+          aria-expanded="false"
+          aria-controls="headerMenu"
+        >
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+            <path d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+        <div class="header-menu" id="headerMenu" hidden>
+          <a href="#shop" id="menuShopLink">Shop collection</a>
+          <button type="button" id="menuSizeGuideBtn">Size guide</button>
+          <a href="https://wa.me/23278952429?text=Hi%20JerseyHub" target="_blank" rel="noopener">Contact on WhatsApp</a>
+        </div>
         <nav>
-          <a
-            href="https://wa.me/23278952429?text=Hi%20JerseyHub"
-            target="_blank"
-            rel="noopener"
-            >Contact</a
-          >
           <button class="cart-btn btn btn--primary" id="openCartBtn" aria-label="Open cart">
             Cart <span class="cart-count" id="cartCount">0</span>
           </button>
@@ -73,14 +84,27 @@
         </button>
       </div>
       <div class="shop-filters" role="search" aria-label="Filter jerseys">
-        <label class="shop-search" for="searchInput">
-          Search
+        <button
+          class="search-toggle icon-btn"
+          id="searchToggle"
+          type="button"
+          aria-label="Open jersey search"
+          aria-expanded="false"
+          aria-controls="searchInputWrap"
+        >
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+            <circle cx="10.8" cy="10.8" r="6.8"></circle>
+            <path d="m16 16 5 5"></path>
+          </svg>
+        </button>
+        <label class="shop-search" id="searchInputWrap" for="searchInput" hidden>
           <span class="textbox">
             <input
               class="textbox__control"
               id="searchInput"
               type="search"
               placeholder="Club, kit or league"
+              aria-label="Search clubs, kits, or leagues"
               autocomplete="off"
             />
           </span>
