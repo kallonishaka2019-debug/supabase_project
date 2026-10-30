@@ -245,7 +245,9 @@ async function saveCheckoutOrder() {
       custom: Boolean(item.customized),
       custom_name: item.customized && customMode(item) !== 'number' ? sanitizeCustomName(item.customName).trim() || null : null,
       custom_number: item.customized && customMode(item) !== 'name' ? sanitizeCustomNumber(item.customNumber) || null : null,
-      custom_mode: item.customized ? customMode(item) : null
+      custom_mode: item.customized ? customMode(item) : null,
+      custom_font: item.customized ? (item.customFont || 'classic') : null,
+      custom_color: item.customized ? (item.customColor || 'gold') : null
     };
   });
 
@@ -290,5 +292,8 @@ function paymentMethodLabel() {
 function orderItemCustomLabel(item) {
   const name = String(item.customName ?? item.custom_name ?? '').trim();
   const number = String(item.customNumber ?? item.custom_number ?? '').trim();
-  return [name, number ? `#${number}` : ''].filter(Boolean).join(' ');
+  const font = CUSTOM_FONTS[item.customFont ?? item.custom_font]?.label;
+  const color = CUSTOM_COLORS[item.customColor ?? item.custom_color]?.label;
+  const style = [color, font].filter(Boolean).join(' ');
+  return [name, number ? `#${number}` : '', style ? `(${style})` : ''].filter(Boolean).join(' ');
 }
