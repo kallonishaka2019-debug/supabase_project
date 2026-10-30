@@ -12,7 +12,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/ebay-skin.css?v=19.38.0" />
-    <link rel="stylesheet" href="css/styles.css?v=20261030-2" />
+    <link rel="stylesheet" href="css/styles.css?v=20261030-5" />
     <script>
       window.API_BASE_URL = "/api";
       window.WHATSAPP_NUMBER = "23278952429";
@@ -22,16 +22,41 @@
   <body class="evo-theme">
     <header>
       <div class="header-inner">
+        <button
+          class="icon-btn menu-toggle"
+          id="menuToggle"
+          type="button"
+          aria-label="Open menu"
+          aria-expanded="false"
+          aria-controls="headerMenu"
+        >
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+            <path d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+        <button
+          class="icon-btn search-toggle"
+          id="searchToggle"
+          type="button"
+          aria-label="Open jersey search"
+          aria-expanded="false"
+          aria-controls="searchBar"
+        >
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+            <circle cx="10.8" cy="10.8" r="6.8"></circle>
+            <path d="m16 16 5 5"></path>
+          </svg>
+        </button>
         <div class="logo">
           <span class="display">JerseyHub</span>
         </div>
+        <div class="header-menu" id="headerMenu" hidden>
+          <a href="#shop" id="menuShopLink">Shop collection</a>
+          <a href="#customizer" id="menuCustomizeLink">Customize your jersey</a>
+          <button type="button" id="menuSizeGuideBtn">Size guide</button>
+          <a href="https://wa.me/23278952429?text=Hi%20JerseyHub" target="_blank" rel="noopener">Contact on WhatsApp</a>
+        </div>
         <nav>
-          <a
-            href="https://wa.me/23278952429?text=Hi%20JerseyHub"
-            target="_blank"
-            rel="noopener"
-            >Contact</a
-          >
           <button class="cart-btn btn btn--primary" id="openCartBtn" aria-label="Open cart">
             Cart <span class="cart-count" id="cartCount">0</span>
           </button>
@@ -50,6 +75,11 @@
         </nav>
       </div>
     </header>
+    <div class="search-bar" id="searchBar" role="search" hidden>
+      <span class="textbox">
+        <input class="textbox__control" id="searchInput" type="search" placeholder="Club, kit or league" aria-label="Search clubs, kits, or leagues" autocomplete="off" />
+      </span>
+    </div>
 
     <section class="hero">
       <div class="ghost-number" aria-hidden="true">10</div>
@@ -65,26 +95,16 @@
       </div>
     </section>
 
+    <section class="customizer" id="customizer" aria-labelledby="customizerTitle">
+      <h2 class="display" id="customizerTitle">Personalise your jersey</h2>
+      <div id="customizerBody"></div>
+    </section>
+
     <section class="shop" id="shop">
       <div class="shop-head">
         <h2 class="display">The Collection</h2>
-        <button class="ghost-btn" id="sizeGuideBtn" style="margin: 0">
-          Size Guide
-        </button>
       </div>
       <div class="shop-filters" role="search" aria-label="Filter jerseys">
-        <label class="shop-search" for="searchInput">
-          Search
-          <span class="textbox">
-            <input
-              class="textbox__control"
-              id="searchInput"
-              type="search"
-              placeholder="Club, kit or league"
-              autocomplete="off"
-            />
-          </span>
-        </label>
         <label for="leagueFilter">
           League
           <span class="select"><select id="leagueFilter">
@@ -173,16 +193,6 @@
             Between sizes, or prefer a relaxed fit? Choose the larger size
           </p>
         </div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="customizeModal">
-      <div class="modal customize-modal" role="dialog" aria-modal="true" aria-labelledby="customizeTitle">
-        <div class="modal-header">
-          <h3 id="customizeTitle">Customize your kit</h3>
-          <button class="modal-close" id="closeCustomize" aria-label="Close">×</button>
-        </div>
-        <div class="modal-body" id="customizeBody"></div>
       </div>
     </div>
 

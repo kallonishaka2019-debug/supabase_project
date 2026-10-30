@@ -1,10 +1,14 @@
-const customizeState = { productId: null, size: 'M', name: '', number: '' };
+const customizeState = { clubName: null, productId: null, size: 'M', name: '', number: '' };
 
 function customizeMode(state) {
   const hasName = state.name.trim() !== '';
   const hasNumber = state.number !== '';
   if (hasName && hasNumber) return 'both';
   return hasName ? 'name' : 'number';
+}
+
+function customizerKits() {
+  return PRODUCTS.filter(p => p.club === customizeState.clubName);
 }
 
 function customizePreviewHtml(product) {
@@ -29,7 +33,7 @@ function customizeSummary(product) {
   };
 }
 
-function refreshCustomizeModal() {
+function refreshCustomizer() {
   const product = PRODUCTS.find(p => p.id === customizeState.productId);
   if (!product) return;
   document.getElementById('czPreview').innerHTML = customizePreviewHtml(product);
@@ -38,39 +42,67 @@ function refreshCustomizeModal() {
   document.getElementById('czTotal').textContent = `${CURRENCY} ${total}`;
 }
 
-function openCustomizeModal(productId, size) {
-  const product = PRODUCTS.find(p => p.id === productId);
-  const modal = document.getElementById('customizeModal');
-  if (!product || !modal) return;
-  Object.assign(customizeState, { productId, size: size || 'M', name: '', number: '' });
+function renderCustomizer() {
+  const root = document.getElementById('customizerBody');
+  if (!root || PRODUCTS.length === 0) return;
 
-  const numberOptions = Array.from({ length: 100 }, (_, n) => `<option value="${n}">${n}</option>`).join('');
-  document.getElementById('customizeBody').innerHTML = `
+  if (!PRODUCTS.some(p => p.id === customizeState.productId)) {
+    customizeState.clubName = PRODUCTS[0].club;
+    customizeState.productId = PRODUCTS[0].id;
+  }
+  const clubs = [...new Set(PRODUCTS.map(p => p.club))];
+  const chevron = '<svg class="icon icon--12" aria-hidden="true" focusable="false" viewBox="0 0 12 12"><path d="M1.5 4l4.5 4.5L10.5 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+  const numberOptions = Array.from({ length: 100 }, (_, n) => `<option value="${n}" ${String(n) === customizeState.number ? 'selected' : ''}>${n}</option>`).join('');
+
+  root.innerHTML = `
     <div class="cz-layout">
       <div class="cz-preview" id="czPreview"></div>
       <div class="cz-form">
-        <div>
-          <div class="club">${escapeHtml(product.club)}</div>
-          <div class="kit-type">${escapeHtml(product.kit)}</div>
+        <div class="cz-group">
+          <label class="cz-label" for="czClub">Choose club</label>
+          <span class="select"><select id="czClub">
+            ${clubs.map(c => `<option value="${escapeHtml(c)}" ${c === customizeState.clubName ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('')}
+          </select>${chevron}</span>
         </div>
-        <div>
-          <div class="cz-label">Size</div>
+        <div class="cz-group">
+          <div class="cz-label">Choose kit</div>
+          <div class="cz-kits" id="czKits">
+            ${customizerKits().map(k => `<button type="button" class="cz-kit ${k.id === customizeState.productId ? 'active' : ''}" data-cz-kit="${k.id}" aria-pressed="${k.id === customizeState.productId}">
+              <span class="cz-kit-img">${k.image ? `<img src="${k.image}" alt="" loading="lazy">` : jerseySvg(k)}</span>
+              <span>${escapeHtml(k.kit)}</span>
+            </button>`).join('')}
+          </div>
+        </div>
+        <div class="cz-group">
+          <div class="cz-label">Choose size</div>
           <div class="size-row" id="czSizes">
             ${SIZES.map(s => `<button type="button" class="size-btn ${s === customizeState.size ? 'active' : ''}" data-cz-size="${s}">${s}</button>`).join('')}
           </div>
         </div>
-        <label class="cz-label" for="czName">Name
-          <span class="textbox"><input class="textbox__control" id="czName" type="text" maxlength="${CUSTOM_NAME_MAX_LENGTH}" placeholder="e.g. KAMARA" autocomplete="off"></span>
-        </label>
-        <label class="cz-label" for="czNumber">Number
-          <span class="select"><select id="czNumber"><option value="">Select number</option>${numberOptions}</select><svg class="icon icon--12" aria-hidden="true" focusable="false" viewBox="0 0 12 12"><path d="M1.5 4l4.5 4.5L10.5 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
-        </label>
-        <p class="li-custom-note" id="czBreakdown"></p>
-        <div class="total-row"><span>Total</span><span class="display" id="czTotal"></span></div>
+        <div class="cz-group">
+          <div class="cz-label">Personalise this item</div>
+          <div class="cz-fields">
+            <span class="textbox"><input class="textbox__control" id="czName" type="text" maxlength="${CUSTOM_NAME_MAX_LENGTH}" placeholder="Add your name" aria-label="Name" autocomplete="off" value="${escapeHtml(customizeState.name)}"></span>
+            <span class="select"><select id="czNumber" aria-label="Number"><option value="">Number</option>${numberOptions}</select>${chevron}</span>
+          </div>
+          <p class="li-custom-note" id="czBreakdown"></p>
+        </div>
+        <div class="cz-subtotal"><span>Subtotal</span><strong id="czTotal"></strong></div>
         <button type="button" class="btn btn--primary add-btn" id="czAddBtn">Add to cart</button>
       </div>
     </div>`;
 
+  document.getElementById('czClub').addEventListener('change', (e) => {
+    customizeState.clubName = e.target.value;
+    customizeState.productId = customizerKits()[0]?.id ?? null;
+    renderCustomizer();
+  });
+  document.getElementById('czKits').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-cz-kit]');
+    if (!btn) return;
+    customizeState.productId = Number(btn.dataset.czKit);
+    renderCustomizer();
+  });
   document.getElementById('czSizes').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-cz-size]');
     if (!btn) return;
@@ -80,20 +112,15 @@ function openCustomizeModal(productId, size) {
   document.getElementById('czName').addEventListener('input', (e) => {
     customizeState.name = sanitizeCustomName(e.target.value);
     e.target.value = customizeState.name;
-    refreshCustomizeModal();
+    refreshCustomizer();
   });
   document.getElementById('czNumber').addEventListener('change', (e) => {
     customizeState.number = e.target.value;
-    refreshCustomizeModal();
+    refreshCustomizer();
   });
   document.getElementById('czAddBtn').addEventListener('click', addCustomizedToCart);
 
-  refreshCustomizeModal();
-  modal.classList.add('open');
-}
-
-function closeCustomizeModal() {
-  document.getElementById('customizeModal')?.classList.remove('open');
+  refreshCustomizer();
 }
 
 function addCustomizedToCart() {
@@ -122,14 +149,4 @@ function addCustomizedToCart() {
   persistCart();
   updateCartCount();
   showSuccess('✓ Customized jersey added to cart');
-  closeCustomizeModal();
-}
-
-function setupCustomizeModal() {
-  const modal = document.getElementById('customizeModal');
-  if (!modal) return;
-  document.getElementById('closeCustomize')?.addEventListener('click', closeCustomizeModal);
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeCustomizeModal();
-  });
 }
