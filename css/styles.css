@@ -120,13 +120,12 @@ nav a {
   border-color: var(--ink);
 }
 .menu-toggle {
-  margin-left: auto;
-  margin-right: 18px;
+  margin-right: 14px;
 }
 .header-menu {
   position: absolute;
   top: calc(100% - 6px);
-  right: 112px;
+  left: 16px;
   z-index: 45;
   display: grid;
   min-width: 210px;
@@ -334,26 +333,6 @@ nav a {
   border-color: var(--ink);
   color: #fff;
 }
-.shop-search {
-  flex: 1 1 240px;
-  max-width: 360px;
-}
-.shop-search[hidden] {
-  display: none;
-}
-.search-toggle {
-  align-self: flex-end;
-}
-.shop-search .textbox {
-  width: 100%;
-}
-.shop-search .textbox__control {
-  flex: 1;
-  min-width: 0;
-  height: 40px;
-  padding: 0 12px;
-  font: inherit;
-}
 .shop-filters .select svg.icon--12 {
   width: 12px;
   height: 100%;
@@ -361,20 +340,79 @@ nav a {
 .shop-filters .select select {
   padding: 0 40px 0 12px;
 }
-.customize-btn {
-  width: 100%;
+.customizer {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  scroll-margin-top: 72px;
 }
-.customize-modal {
-  max-width: 760px;
-  width: 100%;
+.customizer > h2 {
+  margin-bottom: 24px;
 }
 .cz-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 32px;
+}
+.cz-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cz-fields {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 10px;
+}
+.cz-kits {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.cz-kit {
+  flex: 0 0 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  text-align: center;
+  cursor: pointer;
+}
+.cz-kit.active {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.cz-kit-img {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: var(--paper-dim);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.cz-kit-img img,
+.cz-kit-img svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.cz-subtotal {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 18px;
 }
 .cz-preview {
   aspect-ratio: 1;
+  align-self: start;
   background: var(--paper-dim);
   border-radius: 12px;
   overflow: hidden;
@@ -451,6 +489,9 @@ nav a {
 @media (max-width: 640px) {
   .cz-layout {
     grid-template-columns: 1fr;
+  }
+  .customizer {
+    padding: 32px 16px;
   }
 }
 .no-results {
@@ -1080,7 +1121,7 @@ footer p {
     margin-right: 0;
   }
   .header-menu {
-    right: 96px;
+    left: 8px;
   }
   .cart-btn {
     height: 40px;
