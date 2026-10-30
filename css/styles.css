@@ -128,29 +128,61 @@ nav a {
   left: 16px;
   z-index: 45;
   display: grid;
-  min-width: 210px;
-  padding: 6px;
+  min-width: 250px;
+  max-width: calc(100vw - 16px);
+  padding: 8px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--surface);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
 }
 .header-menu[hidden] {
   display: none;
 }
 .header-menu a,
 .header-menu button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   width: 100%;
-  padding: 11px 12px;
+  padding: 12px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 8px;
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
   text-align: left;
   text-decoration: none;
+  cursor: pointer;
+}
+.menu-icon {
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+.header-menu a:hover .menu-icon,
+.header-menu button:hover .menu-icon {
+  stroke: var(--ink);
+}
+.menu-heading {
+  padding: 6px 12px 8px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.menu-divider {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--line);
 }
 .header-menu a:hover,
 .header-menu button:hover,
