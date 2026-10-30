@@ -387,15 +387,8 @@ async function handlePlaceOrder() {
 }
 
 function setupSizeGuide() {
-  const sizeGuideBtn = document.getElementById('sizeGuideBtn');
   const sizeGuideModal = document.getElementById('sizeGuideModal');
   const closeSizeGuide = document.getElementById('closeSizeGuide');
-  
-  if (sizeGuideBtn && sizeGuideModal) {
-    sizeGuideBtn.addEventListener('click', () => {
-      sizeGuideModal.classList.add('open');
-    });
-  }
   
   if (closeSizeGuide && sizeGuideModal) {
     closeSizeGuide.addEventListener('click', () => {
@@ -427,6 +420,7 @@ function setupGlobalEvents() {
     setMenuOpen(menuToggle.getAttribute('aria-expanded') !== 'true');
   });
   document.getElementById('menuShopLink')?.addEventListener('click', () => setMenuOpen(false));
+  document.getElementById('menuCustomizeLink')?.addEventListener('click', () => setMenuOpen(false));
   document.getElementById('menuSizeGuideBtn')?.addEventListener('click', () => {
     setMenuOpen(false);
     document.getElementById('sizeGuideModal')?.classList.add('open');
@@ -453,10 +447,6 @@ function setupGlobalEvents() {
       if (headerMenu && !headerMenu.hidden) setMenuOpen(false);
       const sizeGuideModal = document.getElementById('sizeGuideModal');
       if (sizeGuideModal) sizeGuideModal.classList.remove('open');
-      const searchToggle = document.getElementById('searchToggle');
-      if (searchToggle?.getAttribute('aria-expanded') === 'true') {
-        searchToggle.click();
-      }
     }
   });
 }

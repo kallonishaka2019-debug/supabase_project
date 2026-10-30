@@ -69,46 +69,6 @@ function setupCatalogFilters() {
     updatePagination();
   };
 
-  document.getElementById('searchInput')?.addEventListener('input', (e) => {
-    catalogFilters.query = e.target.value;
-    refreshCatalog();
-  });
-
-  const searchToggle = document.getElementById('searchToggle');
-  const searchInput = document.getElementById('searchInput');
-  const searchInputWrap = document.getElementById('searchInputWrap');
-  const setSearchExpanded = (expanded) => {
-    searchInputWrap.hidden = !expanded;
-    searchToggle.setAttribute('aria-expanded', String(expanded));
-    searchToggle.setAttribute('aria-label', expanded ? 'Close jersey search' : 'Open jersey search');
-    if (expanded) searchInput.focus();
-  };
-
-  searchToggle?.addEventListener('click', () => {
-    const expanded = searchToggle.getAttribute('aria-expanded') === 'true';
-    if (!expanded) {
-      setSearchExpanded(true);
-    } else if (searchInput.value) {
-      searchInput.value = '';
-      catalogFilters.query = '';
-      refreshCatalog();
-      searchInput.focus();
-    } else {
-      setSearchExpanded(false);
-    }
-  });
-
-  searchInput?.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      searchInput.value = '';
-      catalogFilters.query = '';
-      refreshCatalog();
-      setSearchExpanded(false);
-      searchToggle.focus();
-    }
-  });
-
   leagueFilter.addEventListener('change', (e) => {
     catalogFilters.league = e.target.value;
     catalogFilters.team = 'all';

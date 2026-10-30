@@ -94,7 +94,6 @@ function renderGrid() {
             <span class="price">${CURRENCY} ${p.price}${p.sale ? `<span class="strike">${CURRENCY} ${p.sale}</span>` : ''}</span>
           </div>
           <button class="add-btn btn ${isAvailable ? 'btn--primary' : 'btn--secondary request-btn'}" data-add="${p.id}">${isAvailable ? 'Add to cart' : 'Order this kit'}</button>
-          <button class="btn btn--secondary customize-btn" data-customize="${p.id}">Customize name &amp; number</button>
         </div>
       </div>`;
   }).join('');
@@ -106,13 +105,6 @@ function renderGrid() {
     });
   });
   
-  grid.querySelectorAll('[data-customize]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = Number(btn.dataset.customize);
-      openCustomizeModal(id, selectedSizeGlobal[id] || 'M');
-    });
-  });
-
   grid.querySelectorAll('[data-add]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.add);
