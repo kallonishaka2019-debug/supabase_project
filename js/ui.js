@@ -220,7 +220,7 @@ function cartStepHtml() {
           </div>
         </div>
         <div class="li-price" data-line-price="${item.productId}" data-size="${item.size}">${CURRENCY} ${itemPrice}</div>
-        ${item.customized ? `<div class="li-custom active">${customizationDetailsHtml(item)}<p class="li-custom-note">${escapeHtml(customizationBreakdownText(item))}</p></div>` : ''}
+        ${item.customized ? `<div class="li-custom active">${customizationDetailsHtml(item)}</div>` : ''}
       </div>`;
   }).join('');
   

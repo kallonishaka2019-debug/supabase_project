@@ -12,7 +12,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/ebay-skin.css?v=19.38.0" />
-    <link rel="stylesheet" href="css/styles.css?v=20261030-3" />
+    <link rel="stylesheet" href="css/styles.css?v=20261030-5" />
     <script>
       window.API_BASE_URL = "/api";
       window.WHATSAPP_NUMBER = "23278952429";
@@ -32,6 +32,19 @@
         >
           <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
             <path d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+        <button
+          class="icon-btn search-toggle"
+          id="searchToggle"
+          type="button"
+          aria-label="Open jersey search"
+          aria-expanded="false"
+          aria-controls="searchBar"
+        >
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24">
+            <circle cx="10.8" cy="10.8" r="6.8"></circle>
+            <path d="m16 16 5 5"></path>
           </svg>
         </button>
         <div class="logo">
@@ -62,6 +75,11 @@
         </nav>
       </div>
     </header>
+    <div class="search-bar" id="searchBar" role="search" hidden>
+      <span class="textbox">
+        <input class="textbox__control" id="searchInput" type="search" placeholder="Club, kit or league" aria-label="Search clubs, kits, or leagues" autocomplete="off" />
+      </span>
+    </div>
 
     <section class="hero">
       <div class="ghost-number" aria-hidden="true">10</div>
@@ -75,6 +93,11 @@
         </p>
         <a href="#shop" class="hero-cta">Shop the collection ↓</a>
       </div>
+    </section>
+
+    <section class="customizer" id="customizer" aria-labelledby="customizerTitle">
+      <h2 class="display" id="customizerTitle">Personalise your jersey</h2>
+      <div id="customizerBody"></div>
     </section>
 
     <section class="shop" id="shop">
@@ -97,11 +120,6 @@
       </div>
       <div class="grid" id="productGrid"></div>
       <div class="pagination" id="pagination"></div>
-    </section>
-
-    <section class="customizer" id="customizer" aria-labelledby="customizerTitle">
-      <h2 class="display" id="customizerTitle">Personalise your jersey</h2>
-      <div id="customizerBody"></div>
     </section>
 
     <footer>
