@@ -67,9 +67,7 @@ function renderGrid() {
   const grid = document.getElementById('productGrid');
   if (!grid) return;
   
-  const { products, total } = getPaginatedProducts();
-  const resultCount = document.getElementById('resultCount');
-  if (resultCount) resultCount.textContent = `${total} ${total === 1 ? 'jersey' : 'jerseys'}`;
+  const { products } = getPaginatedProducts();
   
   if (products.length === 0) {
     grid.innerHTML = '<p class="no-results">No jerseys match your search. Try a different club or clear the filters.</p>';
@@ -96,6 +94,7 @@ function renderGrid() {
             <span class="price">${CURRENCY} ${p.price}${p.sale ? `<span class="strike">${CURRENCY} ${p.sale}</span>` : ''}</span>
           </div>
           <button class="add-btn btn ${isAvailable ? 'btn--primary' : 'btn--secondary request-btn'}" data-add="${p.id}">${isAvailable ? 'Add to cart' : 'Order this kit'}</button>
+          <button class="btn btn--secondary customize-btn" data-customize="${p.id}">Customize name &amp; number</button>
         </div>
       </div>`;
   }).join('');
@@ -107,6 +106,13 @@ function renderGrid() {
     });
   });
   
+  grid.querySelectorAll('[data-customize]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.customize);
+      openCustomizeModal(id, selectedSizeGlobal[id] || 'M');
+    });
+  });
+
   grid.querySelectorAll('[data-add]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.add);

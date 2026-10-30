@@ -1,12 +1,8 @@
-let catalogFilters = { league: 'all', team: 'all', query: '', inStockOnly: false };
+let catalogFilters = { league: 'all', team: 'all', query: '' };
 let currentPage = 1;
 
 function filterProducts() {
   let filtered = searchProducts(catalogFilters.query);
-
-  if (catalogFilters.inStockOnly) {
-    filtered = filtered.filter(isProductAvailable);
-  }
   
   if (catalogFilters.league !== 'all') {
     filtered = filtered.filter(p => LEAGUE_BY_CLUB[p.club] === catalogFilters.league);
@@ -78,12 +74,6 @@ function setupCatalogFilters() {
     refreshCatalog();
   });
 
-  const stockChip = document.getElementById('inStockChip');
-  stockChip?.addEventListener('click', () => {
-    catalogFilters.inStockOnly = !catalogFilters.inStockOnly;
-    stockChip.setAttribute('aria-pressed', String(catalogFilters.inStockOnly));
-    refreshCatalog();
-  });
   
   leagueFilter.addEventListener('change', (e) => {
     catalogFilters.league = e.target.value;

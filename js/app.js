@@ -7,6 +7,7 @@
     'search.js',
     'account.js',
     'ui.js',
+    'customize.js',
     'events.js',
     'main.js'
   ];

@@ -97,10 +97,6 @@
             <option value="all">All teams</option>
           </select><svg class="icon icon--12" aria-hidden="true" focusable="false" viewBox="0 0 12 12"><path d="M1.5 4l4.5 4.5L10.5 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></span>
         </label>
-        <button class="selection-chip" id="inStockChip" type="button" aria-pressed="false">
-          <span class="selection-chip__text">In stock only</span>
-        </button>
-        <div class="shop-result-count" id="resultCount" aria-live="polite"></div>
       </div>
       <div class="grid" id="productGrid"></div>
       <div class="pagination" id="pagination"></div>
@@ -177,6 +173,16 @@
             Between sizes, or prefer a relaxed fit? Choose the larger size
           </p>
         </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="customizeModal">
+      <div class="modal customize-modal" role="dialog" aria-modal="true" aria-labelledby="customizeTitle">
+        <div class="modal-header">
+          <h3 id="customizeTitle">Customize your kit</h3>
+          <button class="modal-close" id="closeCustomize" aria-label="Close">×</button>
+        </div>
+        <div class="modal-body" id="customizeBody"></div>
       </div>
     </div>
 
