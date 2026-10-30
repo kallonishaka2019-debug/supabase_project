@@ -85,7 +85,6 @@ nav a {
   font-size: 14px;
   font-weight: 600;
 }
-.add-btn,
 .primary-btn,
 .hero-cta {
   background: var(--ink);
@@ -96,24 +95,7 @@ nav a {
   font-weight: 700;
 }
 .cart-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 48px;
-  padding: 0 24px;
-  background: #d94826;
-  color: #fff;
-  border: 0;
-  border-radius: var(--radius);
-  font-size: 15px;
-  font-weight: 700;
-}
-.cart-btn:hover {
-  background: #c13d20;
-}
-.cart-btn:focus-visible {
-  outline: 3px solid var(--ink);
-  outline-offset: 3px;
+  gap: 5px;
 }
 .cart-count {
   display: inline-flex;
@@ -267,34 +249,6 @@ nav a {
 .add-btn {
   width: 100%;
   text-transform: uppercase;
-  transition:
-    background 160ms ease,
-    box-shadow 160ms ease,
-    transform 160ms ease;
-}
-.add-btn:not(.request-btn) {
-  background: #00685a;
-  font-size: 14px;
-  letter-spacing: 0.04em;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
-}
-.add-btn.request-btn {
-  background: var(--pitch-dark);
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
-}
-.add-btn:not(.request-btn):hover,
-.add-btn:not(.request-btn):focus-visible {
-  background: #004f44;
-}
-.add-btn.request-btn:hover,
-.add-btn.request-btn:focus-visible {
-  background: var(--pitch-dark);
-}
-.add-btn:hover,
-.add-btn:focus-visible {
-  box-shadow: 0 5px 0 rgba(24, 35, 51, 0.18);
-  outline: none;
-  transform: translateY(-1px);
 }
 .add-btn:active,
 .size-btn:active {
@@ -302,6 +256,44 @@ nav a {
 }
 .add-btn.added {
   background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.shop-search {
+  flex: 1 1 240px;
+  max-width: 360px;
+}
+.shop-search .textbox {
+  width: 100%;
+}
+.shop-search .textbox__control {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  font: inherit;
+}
+.shop-filters .select svg.icon--12 {
+  width: 12px;
+  height: 100%;
+}
+.shop-filters .select select {
+  padding: 0 40px 0 12px;
+}
+.shop-filters .selection-chip {
+  align-self: flex-end;
+  height: 40px;
+}
+.shop-result-count {
+  width: 100%;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.no-results {
+  grid-column: 1 / -1;
+  padding: 48px 0;
+  text-align: center;
+  color: var(--ink-soft);
 }
 .drawer {
   background: var(--paper);
