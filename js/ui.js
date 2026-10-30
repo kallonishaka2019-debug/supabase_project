@@ -98,6 +98,13 @@ function renderGrid() {
       </div>`;
   }).join('');
   
+  grid.querySelectorAll('.jersey-art.has-back').forEach(art => {
+    art.addEventListener('click', () => {
+      if (!window.matchMedia('(hover: none)').matches) return;
+      art.classList.toggle('show-back');
+    });
+  });
+
   grid.querySelectorAll('.size-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       selectedSizeGlobal[btn.dataset.product] = btn.dataset.size;
@@ -160,6 +167,8 @@ function customizationDetailsHtml(item) {
   return `<div class="checkout-customization">
     <span>Name: <strong>${escapeHtml(name || '—')}</strong></span>
     <span>Number: <strong>${number ? `#${escapeHtml(number)}` : '—'}</strong></span>
+    ${item.customFont && CUSTOM_FONTS[item.customFont] ? `<span>Font: <strong>${escapeHtml(CUSTOM_FONTS[item.customFont].label)}</strong></span>` : ''}
+    ${item.customColor && CUSTOM_COLORS[item.customColor] ? `<span>Colour: <strong>${escapeHtml(CUSTOM_COLORS[item.customColor].label)}</strong></span>` : ''}
   </div>`;
 }
 

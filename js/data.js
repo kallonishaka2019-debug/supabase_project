@@ -172,3 +172,18 @@ function searchProducts(query) {
     (LEAGUE_BY_CLUB[p.club] && LEAGUE_BY_CLUB[p.club].toLowerCase().includes(q))
   );
 }
+
+const CUSTOM_FONTS = {
+  classic: { label: 'Classic', family: 'Anton, sans-serif' },
+  modern: { label: 'Modern', family: 'Inter, sans-serif' },
+  serif: { label: 'Serif', family: 'Playfair Display, serif' },
+  script: { label: 'Script', family: 'Caveat, cursive' }
+};
+const CUSTOM_COLORS = {
+  gold: { label: 'Gold', value: '#FBE122' },
+  white: { label: 'White', value: '#FFFFFF' },
+  black: { label: 'Black', value: '#111111' },
+  red: { label: 'Red', value: '#D7263D' },
+  blue: { label: 'Blue', value: '#1F6FEB' },
+  green: { label: 'Green', value: '#2EA043' }
+};
