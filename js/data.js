@@ -41,12 +41,17 @@ let PRODUCTS = [
   { id: 40, club: "Inter Milan", kit: "Home 2026/27", available: true, number: 10, price: 350, sale: null, color: "#0068A8", stripe: "#000000", image: "customJersey/Inter.home.front.webp", backImage: "customJersey/Inter.home.back.webp" },
   { id: 41, club: "Inter Milan", kit: "Away 2026/27", available: true, number: 10, price: 350, sale: null, color: "#FFFFFF", stripe: "#0068A8", image: "images/Inter.away.webp", backImage: "images/Inter.away.webp" },
   { id: 42, club: "Inter Milan", kit: "Third 2026/27", available: true, number: 10, price: 350, sale: null, color: "#000000", stripe: "#00FF00", image: "images/Inter.third.webp", backImage: "images/Inter.third.webp" },
-  { id: 43, club: "Al-Nassr", kit: "Home 2026/27", available: true, number: 7, price: 380, sale: null, color: "#FDE100", stripe: "#000000", image: "customJersey/AlNassr.home.front.webp", backImage: "customJersey/AlNassr.home.back.webp" },
-  { id: 44, club: "Al-Nassr", kit: "Away 2026/27", available: true, number: 7, price: 380, sale: null, color: "#1D1D1D", stripe: "#FFFFFF", image: "customJersey/AlNassr.away.front.webp", backImage: "customJersey/AlNassr.away.back.webp" },
-  { id: 45, club: "Al-Nassr", kit: "Third 2026/27", available: true, number: 7, price: 380, sale: null, color: "#FF0000", stripe: "#FFFFFF", image: "customJersey/AlNassr.third.front.webp", backImage: "customJersey/AlNassr.third.back.webp" },
-  { id: 46, club: "Inter Miami", kit: "Home 2026/27", available: true, number: 10, price: 400, sale: null, color: "#F9E1E2", stripe: "#613913", image: "images/Miami.home.webp", backImage: "images/Miami.home.webp" },
-  { id: 47, club: "Inter Miami", kit: "Away 2026/27", available: true, number: 10, price: 400, sale: null, color: "#613913", stripe: "#FFFFFF", image: "images/Miami.away.webp", backImage: "images/Miami.away.webp" },
-  { id: 48, club: "Inter Miami", kit: "Third 2026/27", available: true, number: 10, price: 400, sale: null, color: "#000000", stripe: "#F9E1E2", image: "customJersey/Miami.third.front.webp", backImage: "customJersey/Miami.third.back.webp" },
+  { id: 43, club: "Al-Nassr", kit: "Home 2026/27", available: true, number: 7, price: 350, sale: null, color: "#FDE100", stripe: "#000000", image: "customJersey/AlNassr.home.front.webp", backImage: "customJersey/AlNassr.home.back.webp" },
+  { id: 44, club: "Al-Nassr", kit: "Away 2026/27", available: true, number: 7, price: 350, sale: null, color: "#1D1D1D", stripe: "#FFFFFF", image: "customJersey/AlNassr.away.front.webp", backImage: "customJersey/AlNassr.away.back.webp" },
+  { id: 45, club: "Al-Nassr", kit: "Third 2026/27", available: true, number: 7, price: 350, sale: null, color: "#FF0000", stripe: "#FFFFFF", image: "customJersey/AlNassr.third.front.webp", backImage: "customJersey/AlNassr.third.back.webp" },
+  { id: 46, club: "Inter Miami", kit: "Home 2026/27", available: true, number: 10, price: 350, sale: null, color: "#F9E1E2", stripe: "#613913", image: "images/Miami.home.webp", backImage: "images/Miami.home.webp" },
+  { id: 47, club: "Inter Miami", kit: "Away 2026/27", available: true, number: 10, price: 350, sale: null, color: "#613913", stripe: "#FFFFFF", image: "images/Miami.away.webp", backImage: "images/Miami.away.webp" },
+  { id: 48, club: "Inter Miami", kit: "Third 2026/27", available: true, number: 10, price: 350, sale: null, color: "#000000", stripe: "#F9E1E2", image: "customJersey/Miami.third.front.webp", backImage: "customJersey/Miami.third.back.webp" },
+  { id: 49, club: "France", kit: "World Cup 2026 Home Kit", available: true, number: 10, price: 250, sale: null, color: "#000000", stripe: "#F9E1E2", image: "", backImage: "" },
+  { id: 50, club: "Portugal", kit: "World Cup 2026 Home Kit", available: true, number: 10, price: 250, sale: null, color: "#000000", stripe: "#F9E1E2", image: "", backImage: "" },
+  { id: 51, club: "England", kit: "World Cup 2026 Home Kit", available: true, number: 10, price: 250, sale: null, color: "#000000", stripe: "#F9E1E2", image: "", backImage: "" },
+  { id: 52, club: "Spain", kit: "World Cup 2026 Home Kit", available: true, number: 10, price: 250, sale: null, color: "#000000", stripe: "#F9E1E2", image: "", backImage: "" },
+  { id: 53, club: "France", kit: "World Cup 2026 Kit", available: true, number: 10, price: 250, sale: null, color: "#000000", stripe: "#F9E1E2", image: "", backImage: "" },
 ];
 
 const SIZES = ["M", "L", "XL", "XXL"];
@@ -74,6 +79,11 @@ const LEAGUE_BY_CLUB = {
   "Inter Milan": "Serie A",
   "Al-Nassr": "Saudi Pro League",
   "Inter Miami": "MLS"
+  "France": "International"
+  "Spain": "International"
+"Portugal": "International"
+"England": "International"
+"Brazil": "International"
 };
 
 const AVAILABILITY_BY_CLUB = {
@@ -84,15 +94,20 @@ const AVAILABILITY_BY_CLUB = {
   Arsenal: "Available",
   Chelsea: "Available",
   "Manchester City": "Available",
-  Juventus: "Not available",
-  "Borussia Dortmund": "Not available",
-  "Atletico Madrid": "Not available",
-  "Tottenham Hotspur": "Not available",
-  "Bayern Munich": "Not available",
-  PSG: "Not available",
+  Juventus: "Available",
+  "Borussia Dortmund": "",
+  "Atletico Madrid": "Available",
+  "Tottenham Hotspur": "Available",
+  "Bayern Munich": "Available",
+  PSG: "Available",
   "Inter Milan": "Available",
   "Al-Nassr": "Available",
   "Inter Miami": "Available"
+   "France": "Available"
+  "Spain": "Available"
+"Portugal": "Available"
+"England": "Available"
+"Brazil": "Available"
 };
 
 const ADDITIONAL_LEAGUES = ["International"];
