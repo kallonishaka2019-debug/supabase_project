@@ -4,6 +4,7 @@
     { "src": "server/server.js", "use": "@vercel/node" },
     { "src": "*.html", "use": "@vercel/static" },
     { "src": "*.png", "use": "@vercel/static" },
+    { "src": "brand/**", "use": "@vercel/static" },
     { "src": "css/**", "use": "@vercel/static" },
     { "src": "customJersey/**", "use": "@vercel/static" },
     { "src": "images/**", "use": "@vercel/static" },

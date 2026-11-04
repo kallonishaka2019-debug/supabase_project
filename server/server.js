@@ -554,7 +554,7 @@ app.post("/api/orders", ensureSupabase, async (request, response) => {
       items: normalizedItems,
       status: "pending",
     })
-    .select("id, total, status")
+    .select("id, invoice_number, total, status, created_at")
     .single();
 
   if (error) {

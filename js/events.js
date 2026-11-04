@@ -156,6 +156,20 @@ function bindDrawerEvents() {
     placeOrderBtn.addEventListener('click', handlePlaceOrder);
   }
   
+  const downloadInvoiceBtn = document.getElementById('downloadInvoiceBtn');
+  if (downloadInvoiceBtn) {
+    downloadInvoiceBtn.addEventListener('click', async () => {
+      downloadInvoiceBtn.disabled = true;
+      try {
+        await downloadInvoicePdf();
+      } catch (error) {
+        showError(error.message || 'Could not create the invoice.');
+      } finally {
+        downloadInvoiceBtn.disabled = false;
+      }
+    });
+  }
+
   const newOrderBtn = document.getElementById('newOrderBtn');
   if (newOrderBtn) {
     newOrderBtn.addEventListener('click', () => {
@@ -358,6 +372,7 @@ async function handlePlaceOrder() {
             throw new Error('The order was saved, but its ID was not returned.');
           }
           pendingMonimeOrderId = orderId;
+          rememberOrder(savedOrder);
         }
         const monimeCheckout = await createMonimeCheckoutSession(pendingMonimeOrderId);
         const checkoutUrl = monimeCheckout.checkoutUrl || monimeCheckout.url || monimeCheckout.redirectUrl || monimeCheckout.data?.checkoutUrl;
@@ -376,7 +391,8 @@ async function handlePlaceOrder() {
 
     invalidatePendingMonimeOrder();
     const savedOrder = await saveCheckoutOrder();
-    lastOrderNumber = Number(savedOrder?.order?.id ?? savedOrder?.id ?? Math.floor(1000 + Math.random() * 9000));
+    rememberOrder(savedOrder);
+    lastOrderNumber = lastOrder.invoiceNumber;
     renderDrawer();
     showSuccess('Order added');
   } catch (error) {

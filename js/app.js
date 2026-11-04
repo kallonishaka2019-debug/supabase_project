@@ -6,6 +6,7 @@
     'cart.js',
     'search.js',
     'account.js',
+    'invoice.js',
     'ui.js',
     'viewer.js',
     'customize.js',

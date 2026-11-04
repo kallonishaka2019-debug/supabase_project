@@ -311,7 +311,7 @@ function detailsStepHtml() {
 }
 
 function confirmStepHtml() {
-  if (lastOrderNumber) {
+  if (lastOrderNumber && lastOrder) {
     return `
       <div class="drawer-head">
         <h3 class="display">Order added</h3>
@@ -319,32 +319,28 @@ function confirmStepHtml() {
       </div>
       <div class="drawer-body">
         <div class="confirm-icon">✓</div>
-        <div class="order-num">#${lastOrderNumber}</div>
+        <div class="order-num">${escapeHtml(lastOrderNumber)}</div>
         <p style="color:var(--ink-soft); font-size:14px; margin-bottom:20px; line-height:1.6;">
           Your order has been placed and is now visible to our team for processing.
         </p>
         <div class="summary-block">
-          ${cart.map(item => {
-            const p = getCartProduct(item);
-            const fee = itemCustomizationFee(item);
-            return `<div class="checkout-item">
+          ${lastOrder.items.map(item => `<div class="checkout-item">
               <div class="checkout-item-info">
-                <strong>${escapeHtml(p.club)} · ${escapeHtml(p.kit)}</strong>
+                <strong>${escapeHtml(item.title)}</strong>
                 <span>Size ${escapeHtml(item.size)} · Quantity ${item.qty}</span>
-                ${item.customized ? customizationDetailsHtml(item) : ''}
-                ${fee ? `<span class="checkout-item-note">Customization: ${CURRENCY} ${fee * item.qty}</span>` : ''}
+                ${item.customLabel ? `<span>Custom: ${escapeHtml(item.customLabel)}</span>` : ''}
+                ${item.customFee ? `<span class="checkout-item-note">Customization: ${CURRENCY} ${item.customFee * item.qty}</span>` : ''}
               </div>
-              <strong>${CURRENCY} ${p.price * item.qty}</strong>
-            </div>`;
-          }).join('')}
+              <strong>${CURRENCY} ${item.unitPrice * item.qty}</strong>
+            </div>`).join('')}
           <div class="li-row" style="font-weight:800; border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
-            <span>Total</span><span>${CURRENCY} ${grandTotal()}</span>
+            <span>Total</span><span>${CURRENCY} ${lastOrder.total}</span>
           </div>
-          <div class="li-row"><span>Payment method</span><span>${paymentMethodLabel()}</span></div>
+          <div class="li-row"><span>Payment method</span><span>${escapeHtml(lastOrder.paymentMethod)}</span></div>
         </div>
-        ${window.customer?.paymentMethod === 'monime' ? `<div class="payment-action"><span>Transfer to ${MONIME_RECIPIENT}</span><button class="copy-recipient-btn" id="copyRecipientBtn" type="button">Copy number</button></div>` : ''}
       </div>
       <div class="drawer-foot">
+        <button class="primary-btn" id="downloadInvoiceBtn" type="button">Download invoice</button>
         <button class="ghost-btn" id="newOrderBtn">Start a new order</button>
       </div>`;
   }

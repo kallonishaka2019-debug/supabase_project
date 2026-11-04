@@ -32,7 +32,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.history.replaceState({}, '', window.location.pathname);
   }
 
-  const paymentParam = new URLSearchParams(window.location.search).get('payment');
+  const returnParams = new URLSearchParams(window.location.search);
+  const paymentParam = returnParams.get('payment');
   if (paymentParam) {
     if (paymentParam === 'success') {
       clearCart();
@@ -43,6 +44,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       // The shopper completed Monime's flow and the order is saved; confirmation may just be delayed.
       clearCart();
       showInfo('Thank you! Your order is placed. Payment confirmation may take a moment.');
+    }
+    const paidOrder = paymentParam !== 'cancelled' ? loadRememberedOrder(returnParams.get('orderId')) : null;
+    if (paidOrder) {
+      lastOrder = paidOrder;
+      lastOrderNumber = paidOrder.invoiceNumber;
+      drawerMode = 'cart';
+      checkoutStep = 'confirm';
+      renderDrawer();
+      overlay.classList.add('open');
+      drawer.classList.add('open');
     }
     window.history.replaceState({}, '', window.location.pathname);
   }
