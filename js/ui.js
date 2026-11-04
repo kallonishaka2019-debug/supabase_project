@@ -110,7 +110,7 @@ function renderGrid() {
   grid.querySelectorAll('.size-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       selectedSizeGlobal[btn.dataset.product] = btn.dataset.size;
-      renderGrid();
+      btn.parentElement.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('active', b === btn));
     });
   });
   
