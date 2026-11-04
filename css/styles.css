@@ -2171,3 +2171,4 @@ header { box-shadow: none; border-bottom: 1px solid var(--line); }
   header .logo .display { display: none; }
   header .logo .logo-mark { height: 38px; width: 38px; margin-right: 0; }
 }
+a.logo { text-decoration: none; color: inherit; cursor: pointer; }

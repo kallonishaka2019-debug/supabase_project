@@ -13,8 +13,14 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/ebay-skin.css?v=19.38.0" />
-    <link rel="stylesheet" href="css/styles.css?v=20261104-16" />
+    <link rel="stylesheet" href="css/styles.css?v=20261104-17" />
     <script>
+      document.addEventListener("click", function (e) {
+        var logo = e.target.closest("#logoHome");
+        if (!logo) return;
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
       window.API_BASE_URL = "/api";
       window.WHATSAPP_NUMBER = "23278952429";
       window.MONIME_RECIPIENT = "+23278952429";
@@ -35,10 +41,10 @@
             <path d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
         </button>
-        <div class="logo">
+        <a class="logo" href="#top" id="logoHome" aria-label="JerseyHub - back to top">
           <img class="logo-mark" src="logo-mark.png?v=2" alt="" width="36" height="36">
           <span class="display">JerseyHub</span>
-        </div>
+        </a>
         <div class="header-menu" id="headerMenu" hidden>
           <div class="menu-heading">Menu</div>
           <a href="#shop" id="menuShopLink"><svg class="menu-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v12H4z"></path><path d="M9 20v-6h6v6"></path></svg><span>Shop collection</span></a>
