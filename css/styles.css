@@ -2167,3 +2167,7 @@ header { box-shadow: none; border-bottom: 1px solid var(--line); }
 @media (max-width: 600px) {
   .ghost-number { right: -90px; font-size: 380px; }
 }
+@media (max-width: 600px) {
+  header .logo .display { display: none; }
+  header .logo .logo-mark { height: 38px; width: 38px; margin-right: 0; }
+}
