@@ -2164,3 +2164,6 @@ header { box-shadow: none; border-bottom: 1px solid var(--line); }
   header .logo .display { font-size: 16px; letter-spacing: 0.02em; }
   header .logo .logo-mark { height: 32px; width: 32px; }
 }
+@media (max-width: 600px) {
+  .ghost-number { right: -90px; font-size: 380px; }
+}
