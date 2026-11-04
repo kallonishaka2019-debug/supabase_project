@@ -16,7 +16,7 @@ function loadCart() {
 
 function validateCartItem(item) {
   const product = PRODUCTS.find(candidate => candidate.id === item.productId);
-  return product && SIZES.includes(item.size) && Number.isInteger(item.qty) && item.qty > 0;
+  return product && getProductSizes(product).includes(item.size) && Number.isInteger(item.qty) && item.qty > 0;
 }
 
 function persistCart() {

@@ -51,6 +51,8 @@ function renderCustomizer() {
     customizeState.clubName = PRODUCTS[0].club;
     customizeState.productId = PRODUCTS[0].id;
   }
+  const czSizes = getProductSizes(PRODUCTS.find(p => p.id === customizeState.productId));
+  if (!czSizes.includes(customizeState.size)) customizeState.size = czSizes[0];
   const clubs = [...new Set(PRODUCTS.map(p => p.club))];
   const chevron = '<svg class="icon icon--12" aria-hidden="true" focusable="false" viewBox="0 0 12 12"><path d="M1.5 4l4.5 4.5L10.5 4" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
   const numberOptions = Array.from({ length: 100 }, (_, n) => `<option value="${n}" ${String(n) === customizeState.number ? 'selected' : ''}>${n}</option>`).join('');
@@ -77,7 +79,7 @@ function renderCustomizer() {
         <div class="cz-group">
           <div class="cz-label">Choose size</div>
           <div class="size-row" id="czSizes">
-            ${SIZES.map(s => `<button type="button" class="size-btn ${s === customizeState.size ? 'active' : ''}" data-cz-size="${s}">${s}</button>`).join('')}
+            ${czSizes.map(s => `<button type="button" class="size-btn ${s === customizeState.size ? 'active' : ''}" data-cz-size="${s}">${s}</button>`).join('')}
           </div>
         </div>
         <div class="cz-group">

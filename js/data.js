@@ -47,6 +47,11 @@ let PRODUCTS = [
   { id: 46, club: "Inter Miami", kit: "Home 2026/27", available: true, number: 10, price: 350, sale: null, color: "#F9E1E2", stripe: "#613913", image: "images/Miami.home.webp", backImage: "images/Miami.home.webp" },
   { id: 47, club: "Inter Miami", kit: "Away 2026/27", available: true, number: 10, price: 350, sale: null, color: "#613913", stripe: "#FFFFFF", image: "images/Miami.away.webp", backImage: "images/Miami.away.webp" },
   { id: 48, club: "Inter Miami", kit: "Third 2026/27", available: true, number: 10, price: 350, sale: null, color: "#000000", stripe: "#F9E1E2", image: "customJersey/Miami.third.front.webp", backImage: "customJersey/Miami.third.back.webp" },
+  { id: 49, club: "Spain", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["XL"], color: "#C60B1E", stripe: "#FFC400", image: "images/Spain front.webp", backImage: "images/Spain back.webp" },
+  { id: 50, club: "Portugal", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["XXL"], color: "#8A1538", stripe: "#006600", image: "images/Portugal front.webp", backImage: "images/Portugal back.webp" },
+  { id: 51, club: "England", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["XXL"], color: "#FFFFFF", stripe: "#CF081F", image: "images/England front.webp", backImage: "images/England back.webp" },
+  { id: 52, club: "Brazil", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["L", "XL"], color: "#FFDF00", stripe: "#009C3B", image: "images/Brazil front.png", backImage: "images/Brazil back.jpg" },
+  { id: 53, club: "France", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["XL"], color: "#0055A4", stripe: "#EF4135", image: "images/France front.webp", backImage: "images/France back.jpg" },
 ];
 
 const SIZES = ["M", "L", "XL", "XXL"];
@@ -73,7 +78,12 @@ const LEAGUE_BY_CLUB = {
   Juventus: "Serie A",
   "Inter Milan": "Serie A",
   "Al-Nassr": "Saudi Pro League",
-  "Inter Miami": "MLS"
+  "Inter Miami": "MLS",
+  Spain: "International",
+  Portugal: "International",
+  England: "International",
+  Brazil: "International",
+  France: "International"
 };
 
 const AVAILABILITY_BY_CLUB = {
@@ -92,7 +102,12 @@ const AVAILABILITY_BY_CLUB = {
   PSG: "Available",
   "Inter Milan": "Available",
   "Al-Nassr": "Available",
-  "Inter Miami": "Available"
+  "Inter Miami": "Available",
+  Spain: "Available",
+  Portugal: "Available",
+  England: "Available",
+  Brazil: "Available",
+  France: "Available"
 };
 
 const ADDITIONAL_LEAGUES = ["International"];
@@ -135,6 +150,14 @@ async function loadProductsFromApi() {
   } catch {
     // Keep the bundled catalog available when the API cannot be reached.
   }
+}
+
+function getProductSizes(p) {
+  return Array.isArray(p?.sizes) && p.sizes.length ? p.sizes : SIZES;
+}
+
+function getDiscountPercent(p) {
+  return p.sale && p.sale > p.price ? Math.round((1 - p.price / p.sale) * 100) : 0;
 }
 
 function getProductAvailability(p) {

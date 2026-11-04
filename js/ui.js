@@ -75,12 +75,14 @@ function renderGrid() {
   }
 
   grid.innerHTML = products.map(p => {
-    const size = selectedSizeGlobal[p.id] || 'M';
+    const sizes = getProductSizes(p);
+    const size = sizes.includes(selectedSizeGlobal[p.id]) ? selectedSizeGlobal[p.id] : sizes[0];
+    const discount = getDiscountPercent(p);
     const isAvailable = isProductAvailable(p);
     
     return `
       <div class="card">
-        ${p.sale ? '<span class="card-sale">Sale</span>' : ''}
+        ${discount ? `<span class="card-sale">-${discount}%</span>` : p.sale ? '<span class="card-sale">Sale</span>' : ''}
         <div class="jersey-art ${p.backImage ? 'has-back' : ''}">${jerseyVisual(p)}</div>
         <div class="card-body">
           <div>
@@ -88,7 +90,7 @@ function renderGrid() {
             <div class="kit-type">${p.kit}</div>
           </div>
           <div class="size-row" data-product="${p.id}">
-            ${SIZES.map(s => `<button class="size-btn ${s === size ? 'active' : ''}" data-size="${s}" data-product="${p.id}">${s}</button>`).join('')}
+            ${sizes.map(s => `<button class="size-btn ${s === size ? 'active' : ''}" data-size="${s}" data-product="${p.id}">${s}</button>`).join('')}
           </div>
           <div class="price-row">
             <span class="price">${CURRENCY} ${p.price}${p.sale ? `<span class="strike">${CURRENCY} ${p.sale}</span>` : ''}</span>
@@ -115,7 +117,8 @@ function renderGrid() {
   grid.querySelectorAll('[data-add]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.add);
-      const size = selectedSizeGlobal[id] || 'M';
+      const sizes = getProductSizes(PRODUCTS.find(product => product.id === id));
+      const size = sizes.includes(selectedSizeGlobal[id]) ? selectedSizeGlobal[id] : sizes[0];
       addToCart(id, size);
       btn.textContent = 'Added ✓';
       btn.classList.add('added');
