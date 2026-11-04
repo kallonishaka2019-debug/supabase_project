@@ -83,7 +83,7 @@ function renderGrid() {
     return `
       <div class="card">
         ${discount ? `<span class="card-sale">-${discount}%</span>` : p.sale ? '<span class="card-sale">Sale</span>' : ''}
-        <div class="jersey-art ${p.backImage ? 'has-back' : ''}">${jerseyVisual(p)}</div>
+        <div class="jersey-art ${p.backImage ? 'has-back' : ''}" data-viewer="${p.id}">${jerseyVisual(p)}</div>
         <div class="card-body">
           <div>
             <div class="club">${p.club}</div>
@@ -100,10 +100,10 @@ function renderGrid() {
       </div>`;
   }).join('');
   
-  grid.querySelectorAll('.jersey-art.has-back').forEach(art => {
+  grid.querySelectorAll('[data-viewer]').forEach(art => {
     art.addEventListener('click', () => {
-      if (!window.matchMedia('(hover: none)').matches) return;
-      art.classList.toggle('show-back');
+      if (!window.matchMedia('(hover: none)').matches && window.innerWidth > 600) return;
+      openJerseyViewer(Number(art.dataset.viewer));
     });
   });
 
