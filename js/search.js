@@ -12,7 +12,8 @@ function filterProducts() {
     filtered = filtered.filter(p => p.club === catalogFilters.team);
   }
   
-  return filtered.sort((a, b) => a.id - b.id);
+  const isIntl = p => (LEAGUE_BY_CLUB[p.club] === 'International' ? 0 : 1);
+  return filtered.sort((a, b) => isIntl(a) - isIntl(b) || a.id - b.id);
 }
 
 function getPaginatedProducts() {

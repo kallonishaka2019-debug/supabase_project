@@ -50,7 +50,7 @@ let PRODUCTS = [
   { id: 49, club: "Spain", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["XL"], color: "#C60B1E", stripe: "#FFC400", image: "images/Spain front.webp", backImage: "images/Spain back.webp" },
   { id: 50, club: "Portugal", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["XXL"], color: "#8A1538", stripe: "#006600", image: "images/Portugal front.webp", backImage: "images/Portugal back.webp" },
   { id: 51, club: "England", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["XXL"], color: "#FFFFFF", stripe: "#CF081F", image: "images/England front.webp", backImage: "images/England back.webp" },
-  { id: 52, club: "Brazil", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["L", "XL"], color: "#FFDF00", stripe: "#009C3B", image: "images/Brazil front.png", backImage: "images/Brazil back.jpg" },
+  { id: 52, club: "Brazil", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["L", "XL"], color: "#FFDF00", stripe: "#009C3B", image: "images/Brazil front.webp", backImage: "images/Brazil back.jpg" },
   { id: 53, club: "France", kit: "Home 2026/27", available: true, number: 10, price: 250, sale: 350, sizes: ["XL"], color: "#0055A4", stripe: "#EF4135", image: "images/France front.webp", backImage: "images/France back.jpg" },
 ];
 

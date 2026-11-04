@@ -22,7 +22,7 @@ from (values
   ('Spain',    'Home 2026/27', 10, 250, 350, '#C60B1E', '#FFC400', 'images/Spain front.webp',    'images/Spain back.webp',    array['XL']::text[]),
   ('Portugal', 'Home 2026/27', 10, 250, 350, '#8A1538', '#006600', 'images/Portugal front.webp', 'images/Portugal back.webp', array['XXL']::text[]),
   ('England',  'Home 2026/27', 10, 250, 350, '#FFFFFF', '#CF081F', 'images/England front.webp',  'images/England back.webp',  array['XXL']::text[]),
-  ('Brazil',   'Home 2026/27', 10, 250, 350, '#FFDF00', '#009C3B', 'images/Brazil front.png',    'images/Brazil back.jpg',    array['L','XL']::text[]),
+  ('Brazil',   'Home 2026/27', 10, 250, 350, '#FFDF00', '#009C3B', 'images/Brazil front.webp',    'images/Brazil back.jpg',    array['L','XL']::text[]),
   ('France',   'Home 2026/27', 10, 250, 350, '#0055A4', '#EF4135', 'images/France front.webp',   'images/France back.jpg',    array['XL']::text[])
 ) as v(club, kit, number, price, sale, color, stripe, image, back_image, sizes)
 where not exists (
