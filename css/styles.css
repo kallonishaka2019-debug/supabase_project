@@ -1692,3 +1692,11 @@ footer p {
 .card *:focus:not(:focus-visible) {
   outline: none;
 }
+
+.price .strike {
+  margin-left: 8px;
+  font-size: 0.8em;
+  font-weight: 500;
+  opacity: 0.6;
+  text-decoration: line-through;
+}
