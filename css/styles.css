@@ -2152,3 +2152,15 @@ header { box-shadow: none; border-bottom: 1px solid var(--line); }
 .qty-btn { background: var(--chip); border: 0; }
 .li-remove { color: #e5484d; }
 .li-status.available { color: #3fbf8a; background: rgba(63, 191, 138, 0.14); }
+.cart-btn { display: inline-flex; align-items: center; gap: 6px; }
+.cart-btn .cart-icon { flex: 0 0 auto; }
+@media (max-width: 420px) {
+  .cart-btn { padding-left: 12px; padding-right: 12px; gap: 4px; }
+  .cart-btn .cart-count { margin-left: 2px; }
+  .logo .display { font-size: 18px; letter-spacing: 0.04em; }
+}
+@media (max-width: 420px) {
+  header .cart-btn { padding: 0 12px !important; min-width: 0; }
+  header .logo .display { font-size: 16px; letter-spacing: 0.02em; }
+  header .logo .logo-mark { height: 32px; width: 32px; }
+}
