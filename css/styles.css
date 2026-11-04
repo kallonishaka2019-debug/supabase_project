@@ -1781,3 +1781,197 @@ body.jv-open { overflow: hidden; }
   color: #fff;
   font-weight: 700;
 }
+
+/* ===== Design refresh: navy and gold brand palette ===== */
+:root {
+  --paper: #f4f6fb;
+  --paper-dim: #e8ecf5;
+  --ink: #0f1b33;
+  --ink-soft: #5d6a82;
+  --line: #d9dfec;
+  --pitch: #1f4fa3;
+  --pitch-dark: #163b7e;
+  --gold: #d4a63a;
+  --gold-dark: #a97f1c;
+  --crimson: #0f8a6d;
+  --radius: 12px;
+  --shadow-sm: 0 1px 2px rgba(15, 27, 51, 0.06), 0 2px 8px rgba(15, 27, 51, 0.05);
+  --shadow-md: 0 10px 30px rgba(15, 27, 51, 0.14);
+}
+:root[data-theme="dark"] {
+  --paper: #0b1220;
+  --paper-dim: #162036;
+  --ink: #eaf0fb;
+  --ink-soft: #9fb0cb;
+  --surface: #121c30;
+  --line: #26334e;
+  --pitch: #4f86e8;
+  --pitch-dark: #3a6cc9;
+  --gold: #e2b94d;
+}
+body { -webkit-font-smoothing: antialiased; }
+
+/* Header */
+header {
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  box-shadow: 0 1px 0 var(--line), 0 6px 20px rgba(15, 27, 51, 0.05);
+}
+.logo .display { letter-spacing: 0.08em; font-weight: 800; }
+.logo .logo-mark { border-radius: 10px; box-shadow: 0 0 0 2px var(--gold); }
+
+/* Hero */
+.hero {
+  background:
+    radial-gradient(900px 420px at 85% -10%, rgba(212, 166, 58, 0.28), transparent 60%),
+    radial-gradient(700px 400px at 0% 110%, rgba(79, 134, 232, 0.32), transparent 60%),
+    linear-gradient(160deg, #0b1830 0%, #14346b 100%);
+  color: #fff;
+}
+.hero p { color: rgba(255, 255, 255, 0.82); }
+.hero-cta, .hero .btn--primary {
+  background: linear-gradient(180deg, #e8c15a, var(--gold));
+  border-color: var(--gold);
+  color: #1a1305;
+  border-radius: 999px;
+  font-weight: 800;
+  box-shadow: 0 8px 22px rgba(212, 166, 58, 0.35);
+}
+.hero-cta:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+/* Section heading */
+.shop-head { border-bottom: 0; position: relative; padding-bottom: 18px; }
+.shop-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 64px;
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--pitch));
+}
+
+/* Product cards */
+.card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--gold);
+}
+.jersey-art {
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 35%, #ffffff 0%, var(--paper-dim) 100%);
+  margin: 8px 8px 0;
+}
+:root[data-theme="dark"] .jersey-art {
+  background: radial-gradient(circle at 50% 35%, #ffffff 0%, #dfe6f3 100%);
+}
+.jersey-photo { transition: transform 0.35s ease, opacity 0.2s ease; }
+.card:hover .jersey-photo { transform: scale(1.04); }
+.club { font-size: 16px; letter-spacing: 0.01em; }
+.kit-type { font-size: 12.5px; }
+.card .price { font-weight: 800; color: var(--ink); }
+.card .price .strike { color: var(--ink-soft); }
+.card-sale {
+  top: 14px;
+  right: 14px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e8c15a, var(--gold));
+  color: #1a1305;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Buttons and size chips */
+.size-btn { border-radius: 8px; font-weight: 700; transition: all 0.15s ease; }
+.size-btn.active, .size-btn:focus-visible {
+  background: var(--pitch);
+  border-color: var(--pitch);
+  color: #fff;
+}
+.add-btn, .btn, .primary-btn { border-radius: 999px; font-weight: 800; letter-spacing: 0.04em; }
+.btn--primary, .primary-btn, .add-btn.btn--primary {
+  background: linear-gradient(180deg, var(--pitch), var(--pitch-dark));
+  border-color: var(--pitch-dark);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(31, 79, 163, 0.3);
+}
+.btn--primary:hover, .primary-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn:active, .primary-btn:active { transform: translateY(0) scale(0.98); }
+.cart-btn { border-radius: 999px; }
+.add-btn.added { background: var(--crimson); border-color: var(--crimson); }
+
+/* Inputs and filters */
+.select select, .field input, .field textarea, .field select {
+  border-radius: 10px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.select select:focus, .field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--pitch);
+  box-shadow: 0 0 0 3px rgba(79, 134, 232, 0.25);
+  outline: 0;
+}
+
+/* Pagination */
+.pagination-btn { border-radius: 10px; }
+.pagination-btn.active { background: var(--pitch); border-color: var(--pitch); color: #fff; }
+
+/* Drawer, modal, toasts */
+.drawer, .modal { border-radius: 16px; box-shadow: var(--shadow-md); }
+.drawer { border-radius: 16px 0 0 16px; }
+
+/* Customizer section */
+.customizer { border-radius: 20px; }
+
+/* Footer */
+footer {
+  background: linear-gradient(160deg, #0b1830, #14346b);
+  color: #fff;
+  border-top: 3px solid var(--gold);
+}
+footer p { color: rgba(255, 255, 255, 0.75); }
+.footer-whatsapp {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #25d366;
+  color: #062b12;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .card { border-radius: 14px; }
+  .jersey-art { margin: 6px 6px 0; }
+  .club { font-size: 14px; }
+  .card-sale { top: 10px; right: 10px; font-size: 9px; padding: 3px 7px; }
+  .add-btn { font-size: 11px; letter-spacing: 0.02em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto !important; }
+}
+:root[data-theme="dark"] .hero,
+:root[data-theme="dark"] footer {
+  background:
+    radial-gradient(900px 420px at 85% -10%, rgba(226, 185, 77, 0.22), transparent 60%),
+    radial-gradient(700px 400px at 0% 110%, rgba(79, 134, 232, 0.28), transparent 60%),
+    linear-gradient(160deg, #08101f 0%, #10285a 100%);
+  color: #fff;
+}
+:root[data-theme="dark"] .primary-btn,
+:root[data-theme="dark"] .size-btn.active,
+:root[data-theme="dark"] .size-btn:focus-visible,
+:root[data-theme="dark"] .pagination-btn.active {
+  background: var(--pitch);
+  border-color: var(--pitch);
+  color: #fff;
+}
+:root[data-theme="dark"] .add-btn.added { background: var(--crimson); border-color: var(--crimson); }
