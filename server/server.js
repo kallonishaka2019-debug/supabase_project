@@ -70,6 +70,9 @@ function normalizeProductInput(input = {}) {
     image: input.image ? String(input.image) : null,
     back_image: input.backImage ? String(input.backImage) : null,
     available: input.available !== false,
+    sizes: Array.isArray(input.sizes) && input.sizes.length
+      ? input.sizes.filter((size) => ["M", "L", "XL", "XXL"].includes(size))
+      : null,
   };
 }
 
