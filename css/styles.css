@@ -1975,3 +1975,154 @@ footer p { color: rgba(255, 255, 255, 0.75); }
   color: #fff;
 }
 :root[data-theme="dark"] .add-btn.added { background: var(--crimson); border-color: var(--crimson); }
+
+/* ===== Clean UI pass: airy white cards, round chips, soft shadows ===== */
+:root {
+  --paper: #f5f6fa;
+  --paper-dim: #eef0f6;
+  --surface: #ffffff;
+  --line: #e6e9f1;
+  --chip: #eef0f5;
+  --accent: #1f4fa3;
+  --buy: #3fbf8a;
+  --shadow-card: 0 8px 28px rgba(26, 35, 66, 0.08);
+}
+:root[data-theme="dark"] {
+  --chip: #1c2740;
+  --shadow-card: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+/* Header: flat and quiet */
+header { box-shadow: none; border-bottom: 1px solid var(--line); }
+.logo .logo-mark { box-shadow: none; }
+
+/* Cards */
+.grid { gap: 22px; }
+.card {
+  border: 0;
+  border-radius: 22px;
+  box-shadow: var(--shadow-card);
+  background: var(--surface);
+}
+.card:hover { border: 0; transform: translateY(-3px); box-shadow: 0 14px 36px rgba(26, 35, 66, 0.14); }
+.jersey-art, :root[data-theme="dark"] .jersey-art {
+  margin: 0;
+  padding: 14px;
+  border-radius: 22px 22px 0 0;
+  background: linear-gradient(180deg, #f3f5fa, #ffffff);
+}
+.jersey-photo { border-radius: 0; mix-blend-mode: multiply; }
+.card-body { padding: 14px 18px 18px; gap: 12px; }
+.club { font-size: 17px; font-weight: 700; color: var(--ink); }
+.kit-type { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+
+/* Round size chips */
+.size-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.size-btn, :root[data-theme="dark"] .size-btn {
+  flex: 0 0 auto;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--chip);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.size-btn:hover { background: var(--chip); color: var(--ink); filter: brightness(0.96); }
+.size-btn.active, .size-btn:focus-visible,
+:root[data-theme="dark"] .size-btn.active {
+  background: #ffd23f;
+  border: 0;
+  color: #1a1305;
+  font-weight: 800;
+}
+
+/* Price + add button */
+.price-row { display: flex; align-items: baseline; justify-content: space-between; }
+.card .price { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+.card .price .strike { font-size: 13px; font-weight: 400; margin-left: 8px; }
+.add-btn, .add-btn.btn--primary {
+  height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: #23272f;
+  color: #fff;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+:root[data-theme="dark"] .add-btn, :root[data-theme="dark"] .add-btn.btn--primary { background: #f2f4f8; color: #14181f; }
+.add-btn.request-btn, .add-btn.btn--secondary { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+.add-btn.added, :root[data-theme="dark"] .add-btn.added { background: var(--buy); color: #fff; }
+
+/* Discount badge: soft round tag */
+.card-sale {
+  top: 14px;
+  right: 14px;
+  padding: 5px 10px;
+  background: #ff6a3d;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(255, 106, 61, 0.35);
+}
+
+/* Primary buttons and chrome */
+.btn--primary, .primary-btn { background: #23272f; border: 0; box-shadow: none; }
+:root[data-theme="dark"] .btn--primary, :root[data-theme="dark"] .primary-btn { background: #f2f4f8; color: #14181f; }
+.cart-btn { box-shadow: none; }
+.select select, .field input, .field textarea, .field select { background: var(--chip); border: 1px solid transparent; }
+.drawer { border-radius: 24px 0 0 24px; }
+.pagination-btn { border: 0; background: var(--chip); }
+.pagination-btn.active { background: #23272f; color: #fff; }
+:root[data-theme="dark"] .pagination-btn.active { background: #f2f4f8; color: #14181f; }
+
+/* Viewer bottom sheet */
+.jv-overlay { justify-content: flex-start; padding: 0; gap: 0; background: #0d1220; }
+.jv-title { position: absolute; top: 18px; left: 0; right: 0; text-align: center; font-size: 14px; z-index: 2; }
+.jv-stage { width: 100%; max-width: 520px; flex: 1; min-height: 0; aspect-ratio: auto; margin-top: 56px; }
+.jv-face { border-radius: 0; background: #f3f5fa; }
+.jv-hint { position: absolute; top: 56px; left: 0; right: 0; text-align: center; z-index: 2; padding-top: 6px; color: #5d6a82; }
+.jv-sheet {
+  width: 100%;
+  max-width: 520px;
+  padding: 10px 22px 22px;
+  border-radius: 28px 28px 0 0;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+}
+.jv-sheet::before { content: ""; display: block; width: 44px; height: 4px; margin: 0 auto 14px; border-radius: 4px; background: var(--line); }
+.jv-name { font-size: 20px; font-weight: 700; }
+.jv-sub { color: var(--ink-soft); font-size: 14px; margin: 2px 0 14px; }
+.jv-sheet .size-row { margin-bottom: 14px; }
+.jv-buy { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.jv-price { font-size: 24px; font-weight: 600; white-space: nowrap; }
+.jv-price s { font-size: 13px; color: var(--ink-soft); margin-left: 6px; font-weight: 400; }
+.jv-add { flex: 1; height: 50px; border: 0; border-radius: 999px; background: #23272f; color: #fff; font-weight: 600; font-size: 15px; }
+:root[data-theme="dark"] .jv-add { background: #f2f4f8; color: #14181f; }
+.jv-actions { position: absolute; top: 14px; left: 14px; z-index: 2; gap: 6px; }
+.jv-actions button { min-width: 0; padding: 7px 14px; font-size: 12px; background: rgba(255,255,255,.12); border: 0; }
+
+@media (max-width: 600px) {
+  .grid { gap: 12px; }
+  .card { border-radius: 18px; }
+  .jersey-art, :root[data-theme="dark"] .jersey-art { padding: 8px; border-radius: 18px 18px 0 0; }
+  .card-body { padding: 10px 12px 14px; gap: 10px; }
+  .club { font-size: 14px; }
+  .size-row { gap: 6px; }
+  .size-btn, :root[data-theme="dark"] .size-btn { min-width: 34px; height: 34px; padding: 0 8px; font-size: 12px; }
+  .card .price { font-size: 17px; }
+  .card .price .strike { font-size: 11px; margin-left: 4px; }
+  .price-row { flex-wrap: wrap; }
+  .add-btn, .add-btn.btn--primary { height: 40px; font-size: 12.5px; }
+}
+.jv-stage { margin-top: 0; background: #f3f5fa; }
+.jv-hint { top: auto; bottom: auto; position: absolute; top: 64px; }
+.jv-actions { top: 14px; left: 50%; transform: translateX(-50%); }
+.jv-close { background: rgba(255, 255, 255, 0.18); }
+.jv-actions button { background: #23272f; color: #fff; }
+.jv-close { background: #23272f; color: #fff; }
+.jv-close { z-index: 3; }

@@ -3,6 +3,8 @@ function openJerseyViewer(productId) {
   const p = PRODUCTS.find(product => product.id === productId);
   if (!p || !p.image) return;
   const back = p.backImage || p.image;
+  const sizes = getProductSizes(p);
+  let size = sizes.includes(selectedSizeGlobal[p.id]) ? selectedSizeGlobal[p.id] : sizes[0];
 
   const overlay = document.createElement('div');
   overlay.className = 'jv-overlay';
@@ -11,17 +13,27 @@ function openJerseyViewer(productId) {
   overlay.setAttribute('aria-label', `${p.club} ${p.kit}`);
   overlay.innerHTML = `
     <button type="button" class="jv-close" aria-label="Close">&times;</button>
-    <div class="jv-title">${escapeHtml(p.club)} · ${escapeHtml(p.kit)}</div>
     <div class="jv-stage">
       <div class="jv-card">
         <img class="jv-face jv-front" src="${escapeHtml(p.image)}" alt="${escapeHtml(p.club)} front" draggable="false">
         <img class="jv-face jv-back" src="${escapeHtml(back)}" alt="${escapeHtml(p.club)} back" draggable="false">
       </div>
     </div>
-    <div class="jv-hint">Drag to rotate · tap Front / Back</div>
+    <div class="jv-hint">Drag to rotate</div>
     <div class="jv-actions">
       <button type="button" data-jv="front">Front</button>
       <button type="button" data-jv="back">Back</button>
+    </div>
+    <div class="jv-sheet">
+      <div class="jv-name">${escapeHtml(p.club)}</div>
+      <div class="jv-sub">${escapeHtml(p.kit)}</div>
+      <div class="size-row" id="jvSizes">
+        ${sizes.map(sz => `<button type="button" class="size-btn ${sz === size ? 'active' : ''}" data-size="${sz}">${sz}</button>`).join('')}
+      </div>
+      <div class="jv-buy">
+        <div class="jv-price">${CURRENCY} ${p.price}${p.sale ? `<s>${CURRENCY} ${p.sale}</s>` : ''}</div>
+        <button type="button" class="jv-add">${isProductAvailable(p) ? 'Add to cart' : 'Order this kit'}</button>
+      </div>
     </div>`;
   document.body.appendChild(overlay);
   document.body.classList.add('jv-open');
@@ -69,6 +81,18 @@ function openJerseyViewer(productId) {
   stage.addEventListener('pointerup', release);
   stage.addEventListener('pointercancel', release);
 
+  overlay.querySelectorAll('#jvSizes .size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      size = btn.dataset.size;
+      selectedSizeGlobal[p.id] = size;
+      overlay.querySelectorAll('#jvSizes .size-btn').forEach(b => b.classList.toggle('active', b === btn));
+    });
+  });
+  overlay.querySelector('.jv-add').addEventListener('click', () => {
+    addToCart(p.id, size);
+    close();
+    renderGrid();
+  });
   overlay.querySelector('.jv-close').addEventListener('click', close);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   overlay.querySelector('[data-jv="front"]').addEventListener('click', () => snapTo(Math.round(angle / 360) * 360));
