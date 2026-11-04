@@ -2126,3 +2126,7 @@ header { box-shadow: none; border-bottom: 1px solid var(--line); }
 .jv-actions button { background: #23272f; color: #fff; }
 .jv-close { background: #23272f; color: #fff; }
 .jv-close { z-index: 3; }
+.jv-price { margin-bottom: 12px; }
+.jv-buy { gap: 10px; }
+.jv-now { flex: 1.3; height: 50px; border: 0; border-radius: 999px; background: var(--buy); color: #fff; font-weight: 700; font-size: 15px; }
+.jv-add, :root[data-theme="dark"] .jv-add { flex: 1; background: transparent; color: var(--ink); border: 1.5px solid var(--line); }

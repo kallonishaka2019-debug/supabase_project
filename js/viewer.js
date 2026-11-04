@@ -30,9 +30,10 @@ function openJerseyViewer(productId) {
       <div class="size-row" id="jvSizes">
         ${sizes.map(sz => `<button type="button" class="size-btn ${sz === size ? 'active' : ''}" data-size="${sz}">${sz}</button>`).join('')}
       </div>
+      <div class="jv-price">${CURRENCY} ${p.price}${p.sale ? `<s>${CURRENCY} ${p.sale}</s>` : ''}</div>
       <div class="jv-buy">
-        <div class="jv-price">${CURRENCY} ${p.price}${p.sale ? `<s>${CURRENCY} ${p.sale}</s>` : ''}</div>
-        <button type="button" class="jv-add">${isProductAvailable(p) ? 'Add to cart' : 'Order this kit'}</button>
+        <button type="button" class="jv-now">${isProductAvailable(p) ? 'Buy now' : 'Order now'}</button>
+        <button type="button" class="jv-add">Add to cart</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
@@ -92,6 +93,14 @@ function openJerseyViewer(productId) {
     addToCart(p.id, size);
     close();
     renderGrid();
+  });
+  overlay.querySelector('.jv-now').addEventListener('click', () => {
+    addToCart(p.id, size);
+    close();
+    renderGrid();
+    openDrawer();
+    checkoutStep = 'details';
+    renderDrawer();
   });
   overlay.querySelector('.jv-close').addEventListener('click', close);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
